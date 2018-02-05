@@ -30,8 +30,43 @@
         </div>
     </div> -->
     <div class="app">
-        <video-player class="vjs-custom-skin" ref="videoPlayer" :options="playerOptions" @ready="onPlayerReadied" @timeupdate="onTimeupdate">
+        <video-player 
+        class="vjs-custom-skin" 
+        ref="videoPlayer" 
+        :options="playerOptions" 
+        @ready="onPlayerReadied" 
+        @timeupdate="onTimeupdate"
+        @play="onPlayerPlay($event)"
+        @pause="onPlayerPause($event)"
+        @ended="onPlayerEnded($event)"
+        @waiting="onPlayerWaiting($event)"
+        @playing="onPlayerPlaying($event)"
+        @error="errorCut($event)"
+        @click="ceshi"
+        >
         </video-player>
+        <div class="controlBar">
+            <span class="tesn_tit">设备号:1232323</span>
+            <ul class="BarRight">
+                <li>
+                    <i v-if="false" class="iconfont icon-bofang"></i>
+                    <i class="iconfont icon-zanting"></i>
+                </li>
+                <li class="cutDefinition">
+                    <span>高清</span>
+                    <ul class="selectDefin">
+                        <li>流畅</li>
+                        <li>清晰</li>
+                    </ul>
+                </li>
+                <li>
+                    <i class="iconfont icon-icon--"></i>
+                </li>
+                <li>
+                    <i class="iconfont icon-quanping"></i>
+                </li>
+            </ul>
+        </div>
     </div>
 </template>
 <script>
@@ -52,9 +87,9 @@
                 sources: [{
                 withCredentials: false,
                 type: 'application/x-mpegURL',
-                src: 'http://182.61.53.175:80/hls/test2.m3u8'
+                src: 'http://video.dianliubao.com:8080/hls/00e070747d47.m3u8'
                 }],
-                poster: '',
+                poster:'',
                 controlBar:false,
                 // {
                 //     playToggle:false,  //开关
@@ -91,77 +126,28 @@
             }
         },
         created(){
-            console.log(this.$refs)
+            
         },
-        mounted(){   
-                // var SBtn = this.player.controlBar.addChild(`button`);
-                // SBtn.addClass('abcd');
-                // SBtn.setAttribute('id', 'fs');
-                // SBtn.on('click', this.abcd);
-                //设备号
-                var tesn = this.player.controlBar.addChild(`button`);
-                 tesn.addClass('tesn')
-                $('.tesn').append('<div>设备：309c230f9c3c</div>').css({
-                    width:"auto",
-                    padding:"0 10px",
-                })
-                //播放器 实时
-                var isRealTime = this.player.controlBar.addChild(`button`);
-                 //在自定义的全屏button中添加id属性
-                var  $isRealTime = this.dynamicID('isRealTime')
-                isRealTime.setAttribute('id', $isRealTime);
-                $('#'+$isRealTime).append('<div>'+'实时'+'</div>').css({
-                      marginRight:"5rem"
-                })
-                //播放暂停按钮
-                console.log(this.player.controlBar.addChild('playToggle'))
-                //高清
-                var highDefinition = this.player.controlBar.addChild(`button`);
-                var $highDefinition = this.dynamicID('highDefinition');
-                highDefinition.setAttribute('id', $highDefinition);
-                highDefinition.on('click',this.changeKiss);
-                $('#'+$highDefinition)
-                .append('<button class="highDefinition">高清</button><ul class="cutHighDefinition listSelect"><li>高清</li><li>流畅</li></ul>')
-                .css({
-                    position:"relative",
-                    fontSize:"12px"
-                })
-                .find('.cutHighDefinition')
-                .css({
-                    width:"40px",
-                    lineHeight:"30px",
-                    background:"rgba(0,0,0,0.8)",
-                    position:"absolute",
-                    top:"-60px",
-                    left:"50%",
-                    transform:"translate(-50%,0)",
-                    transition:"all 2s linear",
-                    zIndex:"1"
-                })
-                .find('li')
-                .hover(function(){
-                    $(this).css({backgroundColor:"#4198ff"})
-
-                },function(){
-                      $(this).css({background:"rgba(0,0,0,0.8)"})
-                })
-
-                //截图
-                var screenshot = this.player.controlBar.addChild(`button`);
-                var $screenshot = this.dynamicID('screenshot');
-                screenshot.setAttribute('id', $screenshot);
-                $('#'+$screenshot).append('<i class="iconfont icon-icon--"></i>').find('.iconfont.icon-icon--').css({
-                    fontSize:"22px"
-                })
-                //录像
-                var VCR = this.player.controlBar.addChild(`button`);
-                var $VCR = this.dynamicID('VCR');
-                VCR.setAttribute('id', $VCR);
-                $('#'+$VCR).append('<i class="iconfont icon-luzhi"></i>').find('.iconfont.icon-luzhi').css({
-                    fontSize:"22px"
-                })
-                //  this.playerOptions.autoplay = true; 
-                this.player.play()
+        mounted(){
+            //错误机制
+          this.player.play()
+          $(this.player.el_).hover(
+              ()=>{
+                  $(this.player.el_).parent().parent().find('.controlBar').addClass('show')
+              },()=>{
+                 $(this.player.el_).parent().parent().find('.controlBar').addClass('hide')
+              }
+          )
+        $(this.player.el_.parentElement.parentElement).find('.controlBar').hover(
+            ()=>{
+               $(this).css({
+                     opacity:"1"
+                 })
+            },
+            ()=>{
+                console.log
+            }
+        )
         },
         methods:{
             onPlayerReadied () {
@@ -174,26 +160,30 @@
                 return $Id + parseInt(Math.random()*10000+123)
             }, 
             onTimeupdate (e) {
+                // console.log(e.cache_.currentTime)
             // console.log('currentTime', e.cache_.currentTime)
+            }, //播放
+            onPlayerPlay(){
+                // console.log(123)
+            },//暂停
+            onPlayerPause(){
+                // console.log(123)
             },
-            changeKiss(event){
-                    var $currentEle = $(event.target)
-                    if($currentEle.context.nodeName =="LI"&&$currentEle.parent().hasClass('listSelect')){
-
-                    }
-               
+            onPlayerPlaying(){
+                // console.log('开始播放')
             },
-            abcd(){
-                console.log(333)
+            onPlayerWaiting(){
+                // console.log('在等待')
             },
-            ceshi(event){
-                console.log(event)
+            ceshi(){
+                // console.log(123)
             }
         }
     }
 </script>
 
 <style scoped lang="scss">
+ 
     .app{
         position: relative;
         & .video{
@@ -219,12 +209,21 @@
           height: 40px;
           width: 100%;
           line-height: 40px;
-          background-color: #000000;
+          background: rgba(43, 51, 63,0.7);
           position: absolute;
           bottom:0;
           z-index: 10;
-          opacity: 0.8;
           color: #ffffff;
+          transition:visibility 1s opacity 1s;
+          opacity:0;
+            &.show{
+                opacity: 1;
+                visibility:visible;
+            }
+            &.hide{
+                opacity: 0;
+                visibility:hide;
+            }
           & .tesn_tit{
               font-size: 12px;
               padding: 0 20px 0 12px;
@@ -241,24 +240,28 @@
                       font-size: 18px;
                   }
               }
+              .iconfont.icon-icon--{
+                  font-size:20px;
+              }
           }
         }
         .cutDefinition{
             font-size: 12px;
             position: relative;
+            cursor: pointer;
              .selectDefin{
                 position: absolute;
                 box-sizing: content-box;
                 left: 0;
                 top:-80px;
-                background: rgba(0, 0, 0,0.8); 
+                background: rgba(43, 51, 63,0.7); 
                  & > li{
                     box-sizing: content-box;
                     padding: 0 10px;
                     opacity: 1;
                     cursor: pointer;
                     &:hover{
-                        background-color: red;
+                        background-color:#4198ff;
                     }
                  }
                  
@@ -268,6 +271,5 @@
     .video-player.vjs-custom-skin{
         width: 100%;
         height: 100%;
-       
     }
 </style>
