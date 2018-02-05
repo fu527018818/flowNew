@@ -1,0 +1,36 @@
+/*全局主色开始*/
+$globalColor: #4198ff;  /*渐变色初始色*/
+$globalRed: #ff6648; /*用于重要数据显示*/
+$globalOrange:#ffa200; /*用于图标*/
+$globalGreen:#0bc802; /*用于重要数据下跌*/
+$globalColor2:#3378cc;  /*用于导航菜单选中背景色，二级导航，底部*/
+$globalSide:#d3dde0;
+$globalChart:#e5f1ff;
+
+/*全局主色结束*/
+
+/*其他附加色开始*/
+$navHoverColor:#3378cc;
+$white: #ffffff;
+$blue: #409FFE;
+$pink: #DA067A;
+$green: #8CB633;
+$purple: #9C3FCF;
+/*其他附加色结束*/
+
+/*字体颜色开始*/
+$fc-1: #000000;   /*用于蒙版颜色80%;*/
+$fc-2: #4c4c4c;   /*用于标题，正文等*/
+$fc-3: #808080;  /*用于辅助文字*/
+$fc-4: #cccccc;  /*做为分割辅助线*/
+$fc-5: #f2f2f2;  /*分割线背景色*/
+/*字体颜色结束*/
+
+/*字体大小*/
+$fs-1: r(24);
+$fs-2: r(26);
+$fs-3: r(28);
+$fs-4: r(32);
+$fs-5: r(34);
+$fs-6: r(40);
+$fs-7: r(48);

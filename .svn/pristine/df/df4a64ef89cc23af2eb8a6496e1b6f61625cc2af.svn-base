@@ -1,0 +1,184 @@
+<template>
+    <!-- <div class="app">
+         <div class="playBg" >
+             <img v-if="false" src="../../assets/img/software/ly_ai_logo.png" alt="">
+         </div>
+         <video class="video" @click="ceshi">
+            <source src="http://182.61.53.175:80/hls/test2.m3u8" type="video/mp4">
+        </video>
+        <div class="controlBar">
+            <span class="tesn_tit">设备号:1232323</span>
+            <ul class="BarRight">
+                <li>
+                    <i v-if="false" class="iconfont icon-bofang"></i>
+                    <i class="iconfont icon-zanting"></i>
+                </li>
+                <li class="cutDefinition">
+                    <span>高清</span>
+                    <ul class="selectDefin">
+                        <li>流畅</li>
+                        <li>清晰</li>
+                    </ul>
+                </li>
+                <li>
+                    <i class="iconfont icon-icon--"></i>
+                </li>
+                <li>
+                    <i class="iconfont icon-quanping"></i>
+                </li>
+            </ul>
+        </div>
+    </div> -->
+    <div class="app">
+        <video-player class="vjs-custom-skin" ref="videoPlayer" :options="playerOptions" @ready="onPlayerReadied" @timeupdate="onTimeupdate">
+        </video-player>
+    </div>
+</template>
+<script>
+    export default {
+        name:"realPalyer",
+        data(){
+            return{
+               currentTech:"html5",
+               playerOptions: {
+                overNative: true,
+                autoplay: false,
+                controls: true,
+                techOrder: ['flash', 'html5'],
+                sourceOrder: true,
+                flash: { hls: { withCredentials: false } },
+                html5: { hls: { withCredentials: false } },
+                sources: [{
+                type: 'rtmp/mp4',
+                src: 'http://182.61.53.175:80/hls/test2.m3u8'
+                }, {
+                withCredentials: false,
+                type: 'application/x-mpegURL',
+                src: 'http://182.61.53.175:80/hls/test2.m3u8'
+                }],
+                poster: '',
+                controlBar: {
+                    timeDivider: false, // 时间分割线
+                    durationDisplay: false, // 总时间
+                    progressControl: false, // 进度条
+                    customControlSpacer: true, // 未知
+                    fullscreenToggle: true, // 全屏
+                    bigPlayButton : false,
+                    textTrackDisplay : false,
+                    posterImage: false,
+                    errorDisplay : false,
+                    liveDisplay:false,
+                    captionsButton : false,
+                    chaptersButton: false,
+                    subtitlesButton:false,
+                    liveDisplay:false,
+                    playbackRateMenuButton:false
+                  }
+                }
+            }
+        },
+        computed:{
+            player () {
+            return this.$refs.videoPlayer.player
+            },
+        },
+        created(){
+             this.playerOptions.techOrder = ['html5']
+        },
+        mounted(){
+                this.playerOptions.sources[1].src = "http://182.61.53.175:80/hls/test2.m3u8"
+                // this.playerOptions.sources[0].src = "http://182.61.53.175:80/hls/test2.m3u8"
+                this.playerOptions.autoplay = true   
+        },
+        methods:{
+            onPlayerReadied () {
+                if (!this.initialized) {
+                    this.initialized = true
+                    this.currentTech = this.player.techName_
+                }
+            },
+            onTimeupdate (e) {
+            // console.log('currentTime', e.cache_.currentTime)
+            },
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .app{
+        position: relative;
+        & .video{
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 9;
+        }
+        .playBg{
+            height:100%;
+            width: 100%;
+            background-color:#4c4c4c;
+            position:absolute;
+            top: 0;
+            & >img{
+                position: absolute;
+                top:50%;
+                left: 50%;
+                transform: translate(-50%,-50%);
+            }
+        }
+        .controlBar{
+          height: 40px;
+          width: 100%;
+          line-height: 40px;
+          background-color: #000000;
+          position: absolute;
+          bottom:0;
+          z-index: 10;
+          opacity: 0.8;
+          color: #ffffff;
+          & .tesn_tit{
+              font-size: 12px;
+              padding: 0 20px 0 12px;
+          }
+          & .BarRight{
+              float: right;
+              & >li{
+                  float: left;
+                  line-height: 40px;
+                  height: 40px;
+                  padding: 0 10px;
+                 
+                  & .iconfont{
+                      font-size: 18px;
+                  }
+              }
+          }
+        }
+        .cutDefinition{
+            font-size: 12px;
+            position: relative;
+             .selectDefin{
+                position: absolute;
+                box-sizing: content-box;
+                left: 0;
+                top:-80px;
+                background: rgba(0, 0, 0,0.8); 
+                 & > li{
+                    box-sizing: content-box;
+                    padding: 0 10px;
+                    opacity: 1;
+                    cursor: pointer;
+                    &:hover{
+                        background-color: red;
+                    }
+                 }
+                 
+            }
+        }
+    }
+    .video-player.vjs-custom-skin{
+        width: 100%;
+        height: 100%;
+       
+    }
+</style>

@@ -1,0 +1,226 @@
+<template>
+    <div>
+        <search-page :pageDate="pageDate" @changePagesSearch="changePagesSearch">
+            <div slot="tit" class="tit">
+                     <el-button @click="addNotice" type="success" size="mini">新增</el-button>
+                     <el-button @click="editorNotice" type="warning" size="mini">修改</el-button>
+                     <el-button  @click="editorNoticeStop" type="danger" size="mini">下架</el-button>
+            </div>
+        </search-page>
+        <div class="manageTable">
+        <div class="tableBox" v-if="noticeList.lists">
+            <el-table
+            :data="noticeList.lists"
+            border
+            style="width: 100%;text-align:center;"
+            ref="noticeTable"
+            height="500"
+            :header-row-class-name="tableHeade"
+            :default-sort = "{prop:'date', order: 'descending'}"
+            >
+                <el-table-column
+                type="selection"
+                width="55">
+                </el-table-column>
+                <el-table-column
+                prop="title"
+                label="标题"
+                >
+              </el-table-column>
+               <el-table-column
+                  label="置顶"
+                  width="80"
+                >
+                <template slot-scope="scope">
+                    <el-button
+                        size="mini"
+                        :type="scope.row.flag=='1'? 'primary':'info'"
+                        @click="handleEdit(scope.$index, scope.row)">
+                        {{scope.row.flag=='1'?'置顶':'置顶'}}
+                    </el-button>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="publish_time"
+                label="发布时间"
+                width="160"
+                >
+              </el-table-column>
+              <el-table-column
+                prop="stop_time"
+                label="下架时间"
+                width="160"
+                 sortable
+                >
+              </el-table-column>
+              <el-table-column
+                prop="content"
+                label="公告内容"
+                :formatter="formaContent"
+                >
+              </el-table-column>
+              <el-table-column
+                  label="详细信息"
+                  width="120"
+                >
+                <template slot-scope="scope">
+                    <el-button
+                        size="mini"
+                        type="primary"
+                        @click="viewDetails(scope.$index, scope.row)">
+                        {{'详细信息'}}
+                    </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+        </div> 
+    </div>
+    </div>
+</template>
+
+<script>
+    import searchPage from '../../../components/statistic/searchPage';
+    import {mapGetters,mapState} from 'vuex';
+    import formatBg from '../../../assets/js/formatterbg';
+    import {editFlag,editNoticeStop}from '../../../api/global';
+    export default {
+        name:"newNotice", //新公告
+        components:{searchPage},
+        data(){
+            return{
+                pageDate:""
+            }
+        },
+        computed:{
+            ...mapState({
+                noticeList:state=>state.set.noticeAllList
+            }),
+            ...mapGetters([
+                'shop_list_current'
+            ])
+        },
+        methods:{
+            changePagesSearch(val){
+                 this.$emit('changeNoticeRoute',val)
+            },
+            newNoticeInit(){
+                this.pageDate=formatBg.formatPageDate(this.noticeList.limit,this.noticeList.page,this.noticeList.total_count)
+            },//修改表头背景色
+            tableHeade(){
+                 return 'headerTr'
+         }, //修改置顶
+         handleEdit(index,row){
+             editFlag({
+                 shop_id:this.shop_list_current,
+                 id:row.id,
+                 flag:row.flag=="1"?"0":"1"
+             }).then(res=>{
+                if(res.status==200){
+                    this.$emit('changeNoticeRoute')
+                }
+             })
+         },
+         addNotice(){
+             this.$router.push({name:'editNotice',params:{status:'add'}});
+         },
+         viewDetails(index,row){
+             this.$router.push({name:'editNotice',params:{curren:row,status:'edit'}});
+         },
+         editorNotice(){
+              var selected= this.$refs.noticeTable.selection
+             if(selected.length==1){
+                this.$router.push({name:'editNotice',params:{curren:selected[0],status:'edit'}});
+                return false
+             }else{
+                 this.$confirm('操作此项等于一项?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                        }).then(() => {
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        this.$refs.noticeTable.clearSelection();
+                        }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });
+                        return       
+                    });
+                
+             }
+         }, //下架
+         editorNoticeStop(){
+            var selected=this.$refs.noticeTable.selection
+            if(selected.length>0){
+                var arr = []
+                for(var key in selected){
+                    arr.push(selected[key].id)
+                }
+                editNoticeStop({
+                    shop_id:this.shop_list_current,
+                    id:arr
+                }).then(res=>{
+                    if(res.status==200){
+                        this.$message({
+                            type: 'success',
+                            message: '下架成功!'
+                        });
+                       this.$emit('changeNoticeRoute')
+                    }
+                })
+
+            }else{
+                 this.$confirm('请选择大于一条公告', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                        }).then(() => {
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });
+                        return       
+                    });
+            }
+         },
+         formaContent(row,column){
+            if(row.content.length>10){
+                return row.content.slice(0,10) + '...'
+            }else{
+                return row.content
+            }
+             
+         }
+        },
+        created(){
+            
+        },
+        watch:{
+          noticeList:function(val){
+              this.newNoticeInit()
+          }  
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .tit{
+        padding-left: 30px;
+    }
+    .manageTable{
+        width: 100%;
+        height: 800px;
+        background-color: #ffffff;
+        & > .tableBox{
+            padding:24px 30px 30px 30px;
+        }
+    }
+</style>

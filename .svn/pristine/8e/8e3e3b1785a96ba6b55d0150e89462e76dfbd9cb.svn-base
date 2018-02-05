@@ -1,0 +1,476 @@
+<template>
+  <div class="main-header">
+      <div class="main-header-menus">
+        <div class="main-logo"></div>
+        <!-- 导航菜单 start left-->
+        <transition name="fade">
+          <div class="menuBox"  v-show="isMenu">
+              <el-menu
+                :default-active="activeIndex"
+                class="navList"
+                mode="horizontal"
+                :unique-opened="true"
+                @select="handleSelect"
+                background-color="#4198ff "
+                text-color="#ffffff"
+                active-text-color="#fff"
+                :router="true"
+              >
+              <el-menu-item index="/main">
+                  工作台
+              </el-menu-item>
+              <el-submenu index="/user" class="itemDown">
+                  <template slot="title">客户</template>
+                  <el-menu-item index="/userPortrayal">客户画像</el-menu-item>
+                  <el-menu-item index="/userManage">客户管理</el-menu-item>
+              </el-submenu>
+              <el-submenu index="/statistics" class="itemDown">
+                  <template slot="title">统计</template>
+                  <el-menu-item index="/statistics/turnover">营业额</el-menu-item>
+                  <el-menu-item index="/statistics/passengerFlow">客流</el-menu-item>
+                   <el-menu-item index="/statistics/indent">订单流水</el-menu-item>
+                    <el-menu-item index="/statistics/refer">指标查询</el-menu-item>
+                    <el-menu-item index="/statistics/analyze">店铺分析</el-menu-item>
+              </el-submenu>
+              <el-menu-item index="/software">安防</el-menu-item>
+              <el-submenu index="/personnel" class="itemDown">
+                  <template slot="title">人事</template>
+                  <el-menu-item index="/personnel/personnelAdmin">职员管理</el-menu-item>
+                  <el-menu-item index="/personnel/staffReview">职员审核</el-menu-item>
+              </el-submenu>
+            </el-menu>
+            <!-- 导航菜单 start right-->
+            <el-menu
+                :default-active="activeIndex"
+                class="navListRight"
+                mode="horizontal"
+                :unique-opened="true"
+                @select="handleSelect"
+                background-color="#4198ff"
+                text-color="#ffffff"
+                active-text-color="#fff"
+                :router="false"
+              >
+              <el-menu-item index="serach"><i class="iconfont icon-serach"></i></el-menu-item>
+              <el-menu-item index="/messageList">
+                <el-badge :value="notifyStatus*1" class="item">
+                  <i class="iconfont icon-message"></i>
+                </el-badge>
+              </el-menu-item>
+              <el-submenu index="/set" class="itemDown">
+                  <template slot="title">
+                     <i class="iconfont icon-set"></i>
+                  </template>
+                  <el-menu-item index="/shopSetChild">门店设置</el-menu-item>
+                  <el-menu-item index="/newNotice">公告管理</el-menu-item>
+              </el-submenu>
+              <el-submenu  index="userHead"  class="user-img">
+                    <template  slot="title">
+                          {{userInfo.real_name}}
+                        <img id="userAvatar" :src="userInfo.avatar||'../assets/img/default_head.png'" alt="头像">
+                    </template>
+                    <el-menu-item index="/editPersonal">修改资料</el-menu-item>
+                    <el-menu-item index="3-2">我的相册</el-menu-item>
+                    <el-menu-item index="/selectShop">我的门店</el-menu-item>
+                    <el-menu-item index="/userHelp">
+                        设置
+                    </el-menu-item>
+                    <el-menu-item index="/outSystem">退出登录</el-menu-item>
+              </el-submenu>
+              </el-menu>
+        </div>
+      </transition>
+      <transition name="slide-fade">
+          <el-row class="autocomplete" id="searchContentBox"  v-show="isSearch">
+              <el-col :span="10" :offset="7">
+                <i class="iconfont icon-serach" id="searchContentBtn" @click="globalSearch"></i>
+                    <el-autocomplete
+                      class="inline-input searchContent"
+                      v-model="search"
+                      :fetch-suggestions="querySearch"
+                      :placeholder="searchHint"
+                      :select-when-unmatched="true"
+                      @select="handleSelectSearch"
+                    >
+                    </el-autocomplete>
+                <i class="iconfont icon-close" id="closeSearchBtn" @click="closeSearchBtn"></i>
+              </el-col>
+          </el-row>
+         </transition>
+      </div>
+  </div>
+</template>
+<script>
+import {mapGetters,mapState} from 'vuex';
+import {searchHistory} from '../api/global';
+export default {
+  props: ['indexMenu'],
+  components: {},
+  name: "MainNav",
+  data() {
+    return {
+      searchHint:"请输入查询内容",
+      menuCollapse: false,
+      activeIndex: "/main",
+      isMenu: true,
+      isSearch: false,
+      restaurants: [{ value: "搜订单"},{ value: "搜客户"}],
+      search: ""
+    };
+  },
+   computed:{
+           ...mapGetters([
+               'userInfo',
+               'shop_list_current'
+           ]),
+           ...mapState({
+             notifyStatus:state=>state.notifyStatus
+           })
+  },
+  created() {
+       //登录weksocket
+      //  this.$socket.connect();
+      //  this.$socket.emit('login',this.userInfo.user_id)
+       this.menuType(this.indexMenu);
+  },
+  mounted(){
+    // this.restaurants = this.loadAll();
+  },
+  methods: {
+    // 退出系统
+    outSystem: function() {
+        this.$confirm('是否注销当前登录并退出？', '提示：', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              closeOnClickModal: false,
+              type: 'warning'
+        }).then(() => {
+            this.$store.commit('REMOVE_TOKEN');
+            this.$store.commit('ROMOVE_SECRET');
+            this.$store.commit('ROMOVE_SHOP_LIST')
+            this.$router.push('/');
+        }, ()=>{});
+    },
+    closeSearchBtn(){
+        this.isSearch = false;
+        this.isMenu = true;
+        this.activeIndex = this.$route.path
+    },
+    globalSearch(){
+      if(this.searchHint=="搜订单"){
+        // 添加changeRoot参数，改变路由刷新效果
+        this.$router.push({name:'searchOrder',query:{search:this.search,changeRoot:Math.random()}});
+        return
+      }else{
+        // 添加changeRoot参数，改变路由刷新效果
+        this.$router.push({name:'searchUser',query:{search:this.search,changeRoot:Math.random()}})
+        return 
+      }
+    },
+    handleSelect(key, keyPath) {
+      // 搜索关闭时菜单指向当前路由
+       this.menuType(key);
+    },
+    // 搜索选择
+    handleSelectSearch(item){
+      if(item.value=="搜客户"){
+        this.searchHint="搜客户";
+        this.$router.push({name:'searchUser',query:{search:this.search,changeRoot:Math.random()}});
+        this.search=""
+        return
+      }
+      else if(item.value=="搜订单"){
+         this.searchHint="搜订单";
+         this.$router.push({name:'searchOrder',query:{search:this.search,changeRoot:Math.random()}});
+         this.search = "";
+         return
+      }
+      else if(this.searchHint=="搜订单"){
+        this.$router.push({name:'searchOrder',query:{search:this.search,changeRoot:Math.random()}});
+        return
+      }
+      else if(this.searchHint=="搜客户"){
+             this.$router.push({name:'searchUser',query:{search:this.search,changeRoot:Math.random()}})
+        return 
+      }
+    this.$router.push({name:'searchUser',query:{search:this.search,changeRoot:Math.random()}})
+  },
+    querySearch(queryString, cb) {
+      var restaurants = this.restaurants;
+      var results = queryString
+        ? restaurants.filter(this.createFilter(queryString))
+        : restaurants;
+      // 调用 callback 返回建议列表的数据
+      cb(results);
+    },
+    createFilter(queryString) {
+      return restaurant => {
+        return (
+          restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) ===0
+        );
+      };
+    },
+    menuType(index){
+      // 防止刷新时指向当前路由
+      switch(index){
+        case '/main': 
+        this.activeIndex = "/main";
+        break;
+        case "serach":
+          this.isMenu = false;
+          this.isSearch = true;
+          this.activeIndex = "serach";
+        break;
+        case "/user":
+         this.activeIndex = "/user"; 
+        break;
+        case "/personnel":
+        this.activeIndex = "/personnel";
+        break;
+        case "/message":
+        this.activeIndex = "/message";
+        break;
+        case "/outSystem":
+            this.outSystem();
+        break;
+        case "/userHelp":
+            this.activeIndex = "/userHelp";
+            this.$router.push({name:"userHelp"}); 
+        break;
+        case "/editPersonal":
+            this.activeIndex = "/editPersonal";
+            this.$router.push({name:"editPersonal"}); 
+        break;
+        case "/selectShop":
+            this.activeIndex = "/selectShop";
+            this.$router.push({name:"selectShop"}); 
+        break;
+        case "/shopSetChild":
+            this.activeIndex = "/shopSetChild";
+            this.$router.push({name:"shopSetChild"}); 
+        break;
+         case "/messageList":
+            this.activeIndex = "/messageList";
+            this.$router.push({name:"messageList"}); 
+        break;
+         case "/newNotice":
+            this.activeIndex = "/newNotice";
+            this.$router.push({name:"newNotice"}); 
+        break;
+        case "/userPortrayal":
+            this.activeIndex = "/userPortrayal";
+        break;
+        case "/userManage":
+            this.activeIndex = "/userManage";
+        break;
+        case "/userDetails":
+            this.activeIndex = "/userManage";
+        break;
+        case "/statistics/turnover":
+            this.activeIndex="/statistics/turnover";
+        break;
+        case "/statistics/passengerFlow":
+            this.activeIndex="/statistics/passengerFlow";
+        break;
+        case "/statistics/indent":
+            this.activeIndex="/statistics/indent";
+        break;
+        case "/statistics/refer":
+            this.activeIndex="/statistics/refer";
+        break;
+        case "/statistics/analyze":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/highLow":
+            this.activeIndex="/statistics/analyze";
+        break;
+         case "/statistics/analyze/flowRetention":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/effectiveness":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/forecast":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/increase":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/timeFrame":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/weekTendency":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/analyze/weekWeight":
+            this.activeIndex="/statistics/analyze";
+        break;
+         case "/statistics/orderDetail":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/posHistory":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/statistics/expenditures":
+            this.activeIndex="/statistics/analyze";
+        break;
+        case "/personnel/staffReview":
+            this.activeIndex="/personnel/staffReview";
+        break;
+        case "/personnel/personnelAdmin":
+            this.activeIndex="/personnel/personnelAdmin";
+        break;
+        default:
+        this.activeIndex = "/main";
+      }
+    }
+  }
+};
+</script>
+
+<style scoped lang="scss">
+@import '../../static/variable.scss';
+
+/* 头部导航容器 */
+.main-header {
+  position: relative;
+  width: 100%;
+  height: 61px;
+  z-index: 1;
+  background-color:$globalColor;
+  -webkit-box-shadow: 0 0 2px #c8bbbb;
+  -moz-box-shadow: 0 0 2px #c8bbbb;
+  box-shadow: 0 0 2px #c8bbbb;
+  user-select: none;
+}
+/* 头部导航 > LOGO区域 */
+.main-logo {
+  position: absolute;
+  left: 25px;
+  top: 50%;
+  line-height: 61px;
+  color: #fff;
+  font-size: 25px;
+  background: url("../assets/img/logo-.png");
+  width: 70px;
+  height: 23px;
+  transform: translate(0, -50%);
+  z-index: 10;
+}
+/* 头部导航 > 功能区域 */
+.main-header-menus {
+  height: 61px;
+  width: 1024px;
+  margin: 0 auto;
+  position: relative;
+}
+.main-header-menus .el-menu-item i{
+  color: #ffffff;
+  font-size: 20px;
+}
+.menuBox{
+  height:61px;
+  line-height: 61px;
+}
+.navList {
+  height: 61px;
+  line-height: 61px;
+  display: inline-block;
+  padding-left: 150px;
+}
+.navListRight {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: inline-block;
+     & .el-menu-item i{
+       font-size:18px;
+     }
+}
+.el-menu--horizontal {
+  border: none;
+}
+
+.user-search {
+  width: 68px;
+  top: 0;
+  position: absolute;
+  right: 380px;
+  text-align: center;
+}
+.user-search .el-icon-search {
+  width: 24px;
+  text-align: center;
+  font-size: 18px;
+  color: #878d99;
+  vertical-align: middle;
+}
+#userAvatar{
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 10px;
+  top: 50%;
+  border-radius: 50%;
+  transform: translate(0,-50%);
+}
+.el-menu {
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  min-height: 100%;
+  transition: 0.38s;
+}
+.el-menu-item.is-active {
+  border: none !important;
+  background-color:$navHoverColor!important;
+}
+.user-img.el-submenu.is-active {
+  border-bottom-color:$navHoverColor!important;
+}
+.el-menu--horizontal .el-menu-item {
+  border-bottom: none;
+}
+.el-menu-item:hover {
+  background-color:$navHoverColor!important;
+}
+.iconfont.icon-set{
+  color: #ffffff;
+  font-size: 18px;
+}
+/* 搜索 start */
+#searchContentBox{
+  position:absolute;
+  top: 0;
+  width:100%;
+  height: 100%;
+  line-height: 61px;
+  & .el-col.el-col-10.el-col-offset-7{
+    position: relative;
+  }
+  & .searchContent{
+      width: 100%;
+  }
+  & #searchContentBtn{
+    color: #ffffff;
+    position: absolute;
+    font-size: 18px;
+    z-index: 5;
+    top:50%;
+    transform: translate(0,-50%);
+    cursor: pointer;
+  }
+  & #closeSearchBtn{
+      color: #ffffff;
+      position: absolute;
+      font-size: 18px;
+      z-index: 5;
+      top:50%;
+      right: 0;
+      transform: translate(0,-50%);
+      cursor: pointer;
+  }
+}
+/* 搜索 end */
+
+</style>

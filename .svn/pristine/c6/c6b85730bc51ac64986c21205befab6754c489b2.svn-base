@@ -1,0 +1,338 @@
+<template>
+    <!-- 页面头部导航 -->
+    <div class="app">
+        <main-nav :indexMenu="'/statistics/turnover'"></main-nav>
+        <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                    <div class="dateShowBox">
+                         <search-date @seachtrigger="seachtrigger" :isShowId="true" :isShowDate="true" :tit="'营业额'"></search-date>
+                         <card-rectangle :chart="chart" :colorChange="colorChange" @penetrate="penetrate"></card-rectangle>
+                    </div>
+                    <div class="trendChartBox">
+                        <div>{{current_trend.name}}走势图</div>
+                        <div id="turnoverCut">
+                            <el-radio-group v-model="cut_trend_chart" @change="cutChange">
+                                <el-radio-button label="turnover">营业额</el-radio-button>
+                                <el-radio-button label="turnover_rate">成交率</el-radio-button>
+                                <el-radio-button label="joint_rate">连带率</el-radio-button>
+                                <el-radio-button label="unit_price">客单价</el-radio-button>
+                                 <el-radio-button label="new_guest_contribution">新客贡献</el-radio-button>
+                                <el-radio-button label="old_guest_contribution">老客贡献</el-radio-button>
+                            </el-radio-group>
+                        </div>
+                        <div class="cut_trend_chart">
+                            <div id="contain1" style="height:430px">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="newOldBox">
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">  
+                                    <div id="contain2" style="height:501px;width:100%;"></div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                 <div class="grid-content bg-purple">
+                                        <div class="crileRightBox" id="crileRightBox" v-if="new_old_chart">
+                                             <transition name="slide-fade">
+                                                <div class="newOldAnalyze" v-show="is_new_show">
+                                                    <div>
+                                                        <span class="tit">贡献金额：</span> <span class="num">{{new_old_chart[0].price}}</span><span class="unit">元</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="tit">贡献率：</span> <span class="num">{{new_old_chart[0].rate}}</span><span>%</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="tit">消费人数：</span> <span class="num">{{new_old_chart[0].personnel}}</span><span>人</span>
+                                                    </div>
+                                                </div>
+                                             </transition>
+                                               <transition name="slide-fade">
+                                                    <div class="newOldAnalyze" v-show="!is_new_show">
+                                                        <div>
+                                                            <span class="tit">贡献金额：</span> <span class="num">{{new_old_chart[1].price}}</span><span class="unit">元</span>
+                                                        </div>
+                                                        <div>
+                                                            <span class="tit">贡献率：</span> <span class="num">{{new_old_chart[1].rate}}</span><span>%</span>
+                                                        </div>
+                                                        <div>
+                                                            <span class="tit">消费人数：</span> <span class="num">{{new_old_chart[1].personnel}}</span><span>人</span>
+                                                        </div>
+                                                    </div>
+                                              </transition>
+                                        </div>
+                                </div>
+                            </el-col>
+                        </el-row>       
+                    </div>
+                </div>
+                <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+    </div>  
+</template>
+<script>
+
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/statistic/searchDate';
+import cardRectangle from '../../components/common/cardRectangle';
+import Highcharts from 'highcharts';
+import HighchartsPie from '../../../node_modules/highcharts/modules/variable-pie'
+import formatterBg from '../../assets/js/formatterbg'
+import {statisticsSpline}  from '../../assets/js/chart-options';
+import {statisticsTurnover}  from '../../api/global';
+import {mapGetters} from 'vuex';
+HighchartsPie(Highcharts);
+
+export default {
+        name:"turnover",
+        components:{MainNav,searchDate,cardRectangle},
+        data (){
+            return {
+              chart:"",
+              cut_trend_chart:"turnover",//当前显示走势图
+              graphic:"", //图表数据
+              new_old_chart:"",
+              is_new_show:true,
+              current_trend:"",//切换走势图时当前走势图的数据
+              date:'',
+              colorChange:['营业额','客流量']
+            }
+        },
+        computed:{   
+            ...mapGetters([
+                    'shop_list_current', //当前店铺
+                ])
+        },
+        methods:{
+            //初始化时从searchDate页面触发
+            seachtrigger(val){
+                this.date = val;
+                statisticsTurnover({
+                    shop_id:this.shop_list_current,
+                    start_date:this.date[0],
+                    end_date:this.date[1],
+                }).then(res=>{
+                    this.chart = res.data.data.chart;
+                    this.graphic = this.fomrtGraphic(res.data.data.graphic);
+                    // 切换列表 线图
+                    
+                    this.current_trend = this.graphic[this.cut_trend_chart]
+                    this.renderChart(this.current_trend);
+                    //圆形图
+                    this.new_old_chart=this.fomrtNewOld(res.data.data.new_old_chart);
+                    this.circle(this.new_old_chart);
+                })
+         },
+        fomrtGraphic(data){ //格式化数据
+                var obj = {}
+                for(var i in data){
+                    var dataInside = data[i].data
+                    data[i].x = [];
+                    data[i].y1=[];
+                    data[i].y2=[];
+                    for(var j in dataInside){
+                          data[i].x.push(dataInside[j].name)
+                          data[i].y1.push(dataInside[j].data[0] * 1);
+                          data[i].y2.push(dataInside[j].data[1] * 1);
+                    }
+                }
+              return data
+        },  //比较特殊单独处理
+        fomrtNewOld(data){
+            var  arr = [];
+            var  arrVal=[];
+            var  defaultVal = [{
+                        name: '新客',
+                        color:"#48a7ff",
+                        z:200,
+                        sliced: true,
+                        selected: true,
+                    }, {
+                        name:'老客',
+                        color:"#ff6648",
+                        z:150
+            }]
+            for(var key in data){
+                arr.push(data[key])
+            }
+            for(var i=0; i< arr.length;i++){
+                arr[i].y = arr[i].rate * 1;
+                arrVal.push($.extend(arr[i],defaultVal[i]))
+            }
+            return arrVal
+        },
+    circle(data){
+        var self = this;
+        Highcharts.chart('contain2',{
+            chart: {
+                type: 'variablepie'
+            },
+            title: {
+                text: '新老客户贡献度分析',
+                align:"left",
+                x:30,
+                y:30,
+                margin:40,
+                style:{
+                    fontSize:"18px",
+                    color:"#4d4d4d"
+                }
+            },
+            credits: {
+                enabled: false
+            },
+            tooltip: {
+                headerFormat: '',
+                pointFormat: '<span style="color:{point.color}">\u25CF</span> <b> {point.name}</b><br/>' +
+                '<b>{point.name}</b>: <b>{point.y}</b><br/>'
+            },
+            plotOptions:{
+                variablepie:{
+                    allowPointSelect: true,
+                    cursor:'pointer',
+                    dataLabels: {
+                        enabled: false
+                    },
+                    showInLegend: true,
+                    events:{
+                        click:function(e){
+                                this.points.forEach(function(item){
+                                    item.update({
+                                        z:5
+                                    })
+                                })
+                                e.point.update({
+                                    z:10
+                                })
+                            if(e.point.name=="新客"){
+                                self.is_new_show = true;
+                            }else{
+                                 self.is_new_show = false;
+                            }
+                        }
+                    }
+                }
+            },
+            series: [{
+                minPointSize: 10,
+                innerSize: '70%',
+                name: 'countries',
+                zMin: 0,
+                data:data
+            }]
+            })
+        
+        },
+        renderChart(currentData){
+                     Highcharts.chart('contain1',statisticsSpline(currentData.line,currentData.x,currentData.y1,currentData.y2))
+            },
+        cutChange(val){
+                  this.current_trend =this.graphic[val];
+                  this.renderChart(this.current_trend);
+            },
+        penetrate(item){
+                switch(item.name){
+                    case '营业额':
+                    this.$router.push({name:'statisticsIndent',params:{date:this.date,type:item.name}})
+                    break;
+                    case '客流量':
+                    this.$router.push({name:'passengerFlow',params:{date:this.date,type:item.name}})
+                    break;
+                    case '成交量':
+                    this.$router.push({name:'statisticsIndent',params:{date:this.date,type:item.name}})
+                    break;
+                    case '成交率':
+                    this.$router.push({name:'statisticsRefer',params:{date:this.date,type:item.name}})
+                    break;
+                    case '客单价':
+                    this.$router.push({name:'statisticsRefer',params:{date:this.date,type:item.name}})
+                    break;
+                     case '连带率':
+                    this.$router.push({name:'statisticsRefer',params:{date:this.date,type:item.name}})
+                    break;
+                    case '新客贡献':
+                    this.$router.push({name:'statisticsIndent',params:{date:this.date,type:item.name}})
+                    break;
+                    case '老客贡献':
+                    this.$router.push({name:'statisticsIndent',params:{date:this.date,type:item.name}})
+                    break;
+                }
+            }
+        },
+        created(){
+        },
+        mounted(){
+           
+        }
+    }
+</script>
+<style scoped lang="scss">
+    .dateShowBox{
+      width: 1024px;
+      height: 389px;
+      background-color: rgba(255, 255, 255, 1);
+      -webkit-box-shadow: 0 0 1px #ccc;
+      -moz-box-shadow: 0 0 1px #ccc;
+      box-shadow: 0 0 1px #ccc;
+    }
+    .trendChartBox{
+        width: 100%;
+        height: 545px;
+        background-color: rgba(255, 255, 255, 1);
+         margin-top: 6px;
+         & > div:nth-child(1){
+            line-height: 77px;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #4d4d4d;
+            padding-left: 27px;
+         }
+         & > div:nth-child(2){
+             text-align: center;
+         }
+    }
+    .cut_trend_chart{
+        width: 100%;
+    }
+    .newOldBox{
+        width: 100%;
+        height: 501px;
+        background-color: rgba(255, 255, 255, 1);
+        margin-top: 6px;
+    }
+   #crileRightBox{
+    width: 100%;
+    height:501px;
+    position: relative;
+    & .newOldAnalyze{
+        position: absolute;
+        top: 50%;
+        left:80px;
+        transform: translate(0,-55%);
+        & > div{
+             margin: 10px 0;
+             line-height:52px;
+             height: 52px;
+             font-size: 14px;
+             letter-spacing: 0px;
+             color: #4c4c4c;
+             vertical-align:bottom;
+             & .num{
+                 font-size: 40px;
+             }
+             & .tit{
+                 position: relative;
+                 top:-10px;
+             }
+        }
+    }
+ }
+  .dataListBox /deep/ .dataList{
+         & >div{
+             cursor: pointer;
+         }
+    }
+</style>

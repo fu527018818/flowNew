@@ -1,0 +1,117 @@
+<template>
+        <div class="dataListBox" v-if="chart">
+           <el-row :gutter="10" class="dataList">
+                <el-col :span="6" v-for="(item,index) in chart" :key="item.name">
+                    <div class="grid-content bg-purple" @click="toStatistics(item)">
+                        <div>{{item.name}}</div>
+                        <div>
+                            <div :class="[item.value.length>7?'fontNum_28':'']" class="numFont_28" :style="item.name==colorChange[0]?'color: #ff6648;':(item.name==colorChange[1]?'color: #4198ff;':'')">{{item.value}}</div>
+                            <div>{{item.unit}}</div>
+                        </div>
+                        <div v-if="item.is_rise">
+                             <span :class ="[item.is_rise=='1'?'':'rise_down']">
+                                {{item.compare_rate+'%'}}<i :class="['iconfont',item.is_rise=='1'?'icon-up':'icon-down']"></i>
+                            </span>
+                        </div>
+                      <div v-if="item.completion" id="marking" v-bind:style="'width:'+item.completion+'%'"></div>
+                    </div>  
+                </el-col>
+            </el-row>
+       </div>
+</template>
+
+<script>
+    import {mapState} from 'vuex';
+    export default {
+        props:['colorChange','chart'],
+        data(){
+            return{
+
+            }
+        },
+        computed:{
+        },
+
+        methods:{
+            toStatistics(name){
+                this.$emit('penetrate',name)
+            }
+        },
+        watch:{
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .dataListBox{
+        padding: 0 13px;
+        background-color:#ffffff;
+    }
+    .dataListBox .dataList {
+          & > div:nth-child(1) {
+            position: relative;
+          }
+          & .grid-content.bg-purple {
+            // cursor: pointer;
+            border: solid 1px #d3dde0;
+            height: 128px;
+            position: relative;
+          &:hover{
+            box-shadow: 0px 1px 6px 0px #d3dde0;
+          }
+            & > div:nth-child(1) {
+              font-size: 16px;
+              letter-spacing: 0px;
+              color: #4c4c4c;
+              padding-left: 12px;
+              line-height: 39px;
+            }
+            & > div:nth-child(2) {
+              text-align: center;
+              position: relative;
+              font-size: 40px;
+              line-height: 52px;
+              padding: 0 30px;
+              & .fontNum_28{
+                  font-size: 28px;
+              }
+              & > div:nth-child(1){
+                color: #4d4d4d;
+              }
+              & > div:nth-child(2){
+                font-size: 16px;
+                line-height: 26px;
+                letter-spacing: 1px;
+                color: #4c4c4c;
+                position: absolute;
+                bottom: 0;
+                right: 12px;
+              }
+            }
+            & > div:nth-child(3) {
+              line-height: 38px;
+              position: relative;
+              text-align: right;
+              font-size: 12px;
+              letter-spacing: 0px;
+              color: #ff6648;
+              padding-right:12px;
+              & >span{
+                  &.rise_down {
+                    color: #00c853;
+                  }
+                }
+              }
+              
+          }
+          & > div{
+            margin-bottom: 20px;
+          }
+          & #marking {
+            height: 2px;
+            position: absolute;
+            top: -1px;
+            background-color: #ff6648;
+          }
+  }
+</style>

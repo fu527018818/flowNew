@@ -1,0 +1,283 @@
+<template>
+    <!-- 页面头部导航 -->
+    <div class="app">
+        <main-nav :indexMenu="'/statistics/refer'"></main-nav>
+        <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                    <search-date :isShowDate="false" :tit="'查询'" :isShowId="true"  @seachtrigger="seachtrigger"></search-date>
+                    <el-collapse-transition>
+                        <div class="searchCondition" v-show="isFold">
+                             <el-row class="searchList">
+                                    <el-col :span="2">
+                                        <div class="searchName">
+                                            指标
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="22">
+                                            <el-radio-group v-model="type">
+                                                <el-radio v-for="item in def.type" :key="item" :label="item">{{item}}</el-radio>
+                                            </el-radio-group>
+                                    </el-col>
+                            </el-row>
+                            <el-row class="searchList">
+                                    <el-col :span="2">
+                                        <div class="searchName">
+                                            粒度
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="22">
+                                            <el-radio-group v-model="unit" @change="changeUnit">
+                                                <el-radio v-for="item in def.unit" :key="item" :label="item">{{item}}</el-radio>
+                                            </el-radio-group>
+                                    </el-col>
+                            </el-row>
+                            <el-row class="searchList">
+                                    <el-col :span="2">
+                                        <div class="searchName">
+                                            时间
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="22">
+                                        <el-date-picker
+                                            v-model="date1"
+                                            v-show ="isHour"
+                                            type="date"
+                                            value-format="yyyy-MM-dd"
+                                            placeholder="选择日期">
+                                        </el-date-picker>
+                                         <el-date-picker
+                                                v-show ="!isHour"
+                                                v-model="date2"
+                                                type="daterange"
+                                                value-format="yyyy-MM-dd"
+                                                range-separator="至"
+                                                start-placeholder="开始日期"
+                                                end-placeholder="结束日期">
+                                        </el-date-picker>    
+                                    </el-col>
+                            </el-row>
+                        </div>
+                    </el-collapse-transition>
+                    <div class="manageSearch">
+                         <el-row>
+                                <el-col :span="3">
+                                    <div class="conditionTit">
+                                        筛选条件：
+                                    </div>
+                                </el-col> 
+                                <!-- 标签 -->
+                                <el-col :span="15">  
+                                        <div class="conditionTag">
+                                            <el-tag 
+                                                type="info"
+                                                :disable-transitions="false"
+                                                >
+                                                <span>指标：{{type}}</span>    
+                                            </el-tag>
+                                            <el-tag 
+                                                type="info"
+                                                :disable-transitions="false"
+                                                
+                                                >
+                                                <span>粒度：{{unit}}</span>    
+                                            </el-tag>
+                                            <el-tag 
+                                                type="info"
+                                                :disable-transitions="false"
+                                                >
+                                                <span>时间：{{unit=='小时'?date1:formatDate2}}</span>    
+                                            </el-tag>
+                                        </div>
+                                </el-col>
+                                <el-col :span="6">
+                                    <div id="searchBtn">
+                                        <div @click="showColse">{{statusFold}}<i class="el-icon--right" v-bind:class="[isFold?'el-icon-arrow-up':'el-icon-arrow-down']"></i></div>
+                                        <el-button type="primary" @click="submitBtn">
+                                            筛选
+                                        </el-button>
+                                        <el-button type="primary" @click="closeSearch">
+                                            清空
+                                        </el-button>
+                                    </div>
+                                </el-col> 
+                        </el-row>
+                    </div>
+                    <div class="chartShow">
+                        <div class="contain" id="contain" style="height:100%"></div>
+                    </div>
+                </div>
+                 <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+    </div>  
+</template>
+  
+<script>
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/statistic/searchDate';
+import getDate from '../../assets/js/dateSelect';
+import formatterbg  from '../../assets/js/formatterbg';
+import {statisticsOneSpline} from '../../assets/js/chart-options';
+import {statisticsRefer} from '../../api/global';
+import {mapGetters} from 'vuex';
+import Highcharts from 'highcharts';
+export default {
+        name:"refer",//指标查询
+        components:{MainNav,searchDate},
+        data (){
+            return {
+                statusFold:'收起',
+                isFold:"true",
+                type:"营业额",
+                isHour:true,//粒度是否为小时
+                unit:"小时",
+                def:{
+                    type:['营业额','客流量','客单价','成交率','成交笔数','连带率','件单价'],
+                    unit:['小时','天','周','月']
+                },
+                date1:"",
+                date2:[]
+            }
+        },
+        computed:{
+         ...mapGetters([
+                    'shop_list_current', //当前店铺
+            ]),
+           formatDate2(){
+               return this.date2[0] +'至'+ this.date2[1]
+           } 
+        },
+        methods:{
+            changeUnit(val){
+                if(val=="小时"){
+                    this.isHour =true;
+                    if(this.date2.length>0){
+                        this.date1=this.date2[0];
+                        this.date2= [];
+                    }
+                }else{
+                    this.isHour =false;
+                    if(this.date1){
+                        for(var i=0;i<2;i++){
+                            this.date2.push(this.date1)
+                        }
+                        this.date1="";
+                    }
+                }
+            }, //切换门店 
+            showColse(){
+                    this.isFold = !this.isFold;
+                    if(this.isFold==true){
+                        this.statusFold="收起"
+                    }else{
+                        this.statusFold="展开"
+                    }
+            },
+          //清空
+            closeSearch(){
+                this.unit="小时"
+                this.date1 = getDate.getToday().start;
+                this.type="营业额"
+                this.isHour = true;
+            }, //筛选时
+             submitBtn(){
+                this.searchInit()
+            },//切换门店时
+            seachtrigger(){
+            if(this.$route.params.type){
+                 this.type = this.$route.params.type
+                 this.unit="天"
+                 this.date2 = this.$route.params.date
+                 this.isHour =false;
+            }else{
+                this.date1 = getDate.getToday().start;
+            }
+                this.searchInit();
+            },
+            searchInit(){
+                 statisticsRefer({
+                    shop_id:this.shop_list_current,
+                    type:this.type,
+                    unit:this.unit,
+                    start_date:this.unit=="小时"?this.date1:this.date2[0],
+                    end_date:this.unit=="小时"?this.date1:this.date2[1]
+                }).then(res=>{
+                    var data = res.data.data
+                   var current = formatterbg.formatOneSpline(data.graphic.data1)
+                    Highcharts.chart('contain',statisticsOneSpline(current.name,current.date,current.line[0],current.y))
+                })
+            }
+        },
+        created(){
+            // this.date1 = getDate.getToday().start;
+            // // 初始化时
+            // if(this.$route.params.name){
+            //     this.type = this.$route.params.name
+            // }
+            // this.searchInit()
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .searchCondition{
+        width:100%;
+        height: 160px;
+        background-color: #ffffff;
+        transition: all 1.5s inherit;
+        padding: 20px 30px 0 30px;
+        box-sizing: border-box!important;
+        margin-top: 6px;
+        &  .searchList{
+            height: 45px;
+            line-height: 45px;
+            border-bottom: 1px dashed #cccccc;
+            overflow: hidden;
+        & .searchName{
+                font-size: 14px;
+                font-weight: normal;
+                font-stretch: normal;
+                letter-spacing: 0px;
+                color: #808080;
+                padding-left: 10px;
+        }
+            &.searchList:last-child{
+                    border-bottom:none;
+            }
+        }
+    }
+    .manageSearch{
+        background-color: #ffffff;
+        line-height: 77px;
+         &  .conditionTit{
+        padding-left: 30px;
+        font-family: MicrosoftYaHeiLight;
+        font-size: 14px;
+        font-weight: normal;
+        font-stretch: normal;
+        letter-spacing: 0px;
+        color: #4c4c4c;
+
+        }
+        &  .conditionTag{
+        line-height:77px;
+        width: 100%;
+        height: 100%;
+        min-height: 77px;
+        }
+    }
+    .chartShow{
+        width:100%;
+        height: 500px;
+        background-color: #ffffff;
+        margin-top: 6px;
+        padding-bottom: 200px;
+    }
+.el-date-editor--daterange.el-input, .el-date-editor--daterange.el-input__inner, .el-date-editor--timerange.el-input, .el-date-editor--timerange.el-input__inner{
+    width: 220px;
+}
+.el-date-editor.el-input.el-input--prefix.el-input--suffix.el-date-editor--date{
+    width: 150px;
+}
+</style>

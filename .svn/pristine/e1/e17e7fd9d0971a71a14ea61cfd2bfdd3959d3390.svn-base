@@ -1,0 +1,95 @@
+.dataListBox .dataList {
+    padding: 0 13px;
+          & > div:nth-child(1) {
+            position: relative;
+          }
+          & .grid-content.bg-purple {
+            cursor: pointer;
+            border: solid 1px #d3dde0;
+            height: 128px;
+            position: relative;
+          &:hover{
+            box-shadow: 0px 1px 6px 0px #d3dde0;
+          }
+            & > div:nth-child(1) {
+              font-size: 14px;
+              letter-spacing: 0px;
+              color: #4c4c4c;
+              padding-left: 12px;
+              line-height: 39px;
+            }
+            & > div:nth-child(2) {
+              text-align: center;
+              position: relative;
+              font-size: 40px;
+              line-height: 52px;
+              padding: 0 30px;
+              & > div:nth-child(1){
+                color: #4d4d4d;
+              }
+              & > div:nth-child(2){
+                font-size: 16px;
+                line-height: 26px;
+                letter-spacing: 1px;
+                color: #4c4c4c;
+                position: absolute;
+                bottom: 0;
+                right: 12px;
+              }
+              // & .numList div:nth-child(1) {
+              //   font-size: 40px;
+              //   font-weight: normal;
+              //   font-stretch: normal;
+              //   letter-spacing: 0px;
+              //   color: #ff6648;
+              //   padding-left: 10px;
+              //   overflow: hidden;
+              //   &.profit {
+              //     color: #4198ff;
+              //   }
+              //   &.col_rest {
+              //     color: #4d4d4d;
+              //   }
+              // }
+              // & .numList div:nth-child(2) {
+              //   font-size: 13px;
+              //   height: 45px;
+              //   font-weight: normal;
+              //   font-stretch: normal;
+              //   letter-spacing: 0px;
+              //   color: #4c4c4c;
+              //   position: relative;
+              //   & > span {
+              //     position: absolute;
+              //     right: 17px;
+              //     bottom: -2px;
+              //     font-size: 16px;
+              //   }
+              // }
+            }
+            & > div:nth-child(3) {
+              line-height: 38px;
+              position: relative;
+              text-align: right;
+              font-size: 12px;
+              letter-spacing: 0px;
+              color: #ff6648;
+              padding-right:12px;
+              & >span{
+                  &.rise_down {
+                    color: #00c853;
+                  }
+                }
+              }
+              
+          }
+          & > div{
+            margin-bottom: 20px;
+          }
+          & #marking {
+            height: 2px;
+            position: absolute;
+            top: -1px;
+            background-color: #ff6648;
+          }
+  }

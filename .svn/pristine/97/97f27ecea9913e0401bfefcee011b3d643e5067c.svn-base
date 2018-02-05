@@ -1,0 +1,262 @@
+<template>
+    <div class="dateShowBox">
+       <div class="dateSearchBox">
+           <el-row>
+            <el-col :span="8">
+                <div class="grid-content bg-purple">
+                   <el-form :inline="true" id="selAreaForm">
+                    <el-form-item label="今日营收">
+                        <el-select  @change="changeShop" v-model="list_current" id="selArea" placeholder="请选择门店">
+                            <el-option v-for="item in shop_list" :key="item.id" :label="item.shop_name" :value="item.id"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    </el-form>
+                </div>
+            </el-col>
+             <el-col :span="16">
+                <div class="grid-content bg-purple">
+                 <router-link :to="{name:'posEnter'}" type="primary" class="el-button el-button--primary" id="dataEntering">数据录入</router-link>
+                </div>
+            </el-col>
+          </el-row>
+       </div>
+       <div class="dataListBox" v-if="chart">
+           <el-row :gutter="10" class="dataList">
+                <el-col :span="6" v-for="item in chart" :key="item.name">
+                    <div class="grid-content bg-purple" @click="toStatistics('turnover')">
+                        <div>{{item.name}}</div>
+                        <div>
+                            <div :style="item.name=='营业额'?'color: #ff6648;':(item.name=='营业利润'?'color: #4198ff;':'')">{{item.value}}</div>
+                            <div>{{item.unit}}</div>
+                            <!-- <el-row :gutter="0" class="numList">
+                                <el-col :span="18">{{chart.turnover.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.turnover.unit}}</span>
+                                </el-col>
+                            </el-row> -->
+                        </div>
+                        <div>
+                             <span :class ="[item.is_rise=='1'?'':'rise_down']">
+                                {{item.compare_rate+'%'}}<i :class="['iconfont',item.is_rise=='1'?'icon-up':'icon-down']"></i>
+                            </span>
+                        </div>
+                      <!-- <div id="marking" v-bind:style="'width:'+ chart.turnover.completion+'%'"></div> -->
+                    </div>  
+                </el-col>
+                <!-- <el-col :span="6">
+                    <div class="grid-content bg-purple" style="cursor:initial;">
+                        <div>{{chart.turnover_rate.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="profit">{{chart.turnover_rate.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.turnover_rate.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.turnover.is_rise=='1'?'':'rise_down']">
+                            {{chart.turnover_rate.compare_rate+'%'}}<i :class="['iconfont',chart.turnover_rate.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" style="cursor:initial;">
+                        <div>{{chart.operating_cost.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.operating_cost.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.operating_cost.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.operating_cost.is_rise=='1'?'':'rise_down']">
+                            {{chart.operating_cost.compare_rate+'%'}}<i :class="['iconfont',chart.operating_cost.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" style="cursor:initial;">
+                        <div>{{chart.expenditure.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.expenditure.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.expenditure.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.expenditure.is_rise=='1'?'':'rise_down']">
+                            {{chart.expenditure.compare_rate+'%'}}<i :class="['iconfont',chart.expenditure.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" @click="toStatistics('passengerFlow')">
+                        <div>{{chart.passenger.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.passenger.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.passenger.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.passenger.is_rise=='1'?'':'rise_down']">
+                            {{chart.passenger.compare_rate+'%'}}<i :class="['iconfont',chart.passenger.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" @click="toStatistics('statisticsIndent')">
+                        <div>{{chart.volume.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.volume.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.volume.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.volume.is_rise=='1'?'':'rise_down']">
+                            {{chart.volume.compare_rate+'%'}}<i :class="['iconfont',chart.volume.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" @click="toStatistics('statisticsRefer')">
+                        <div>{{chart.volume_rate.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.volume_rate.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.volume_rate.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.volume_rate.is_rise=='1'?'':'rise_down']">
+                            {{chart.volume_rate.compare_rate+'%'}}<i :class="['iconfont',chart.volume_rate.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <div class="grid-content bg-purple" style="cursor:initial;">
+                        <div>{{chart.unit_price.name}}</div>
+                        <div>
+                            <el-row :gutter="0" class="numList">
+                                <el-col :span="18" class="col_rest">{{chart.unit_price.value}}</el-col>
+                                <el-col :span="6">
+                                    <span>{{chart.unit_price.unit}}</span>
+                                </el-col>
+                            </el-row>
+                        </div>
+                        <div :class ="[chart.unit_price.is_rise=='1'?'':'rise_down']">
+                            {{chart.unit_price.compare_rate+'%'}}<i :class="['iconfont',chart.unit_price.is_rise=='1'?'icon-up':'icon-down']"></i>
+                        </div>
+                    </div>
+                </el-col> -->
+            </el-row>
+       </div>
+    </div>
+</template>
+
+<script>
+import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
+    export default {
+        data(){
+            return {
+                value6:"",
+                list_current:""
+            }
+        },
+        computed:{
+            ...mapGetters([
+                'shop_list',  //店铺列表
+                'shop_list_current'
+           ]),
+           ...mapState({
+               chart:state =>state.main.chart   //初始化时数据为空，异步加载的数据
+           })
+        },
+        methods:{
+            changeShop(val){
+                this.$store.dispatch('cut_shop_list_current',val);
+                //切换门店时公告切换
+                this.$store.dispatch('notice_list',{shop_id:this.shop_list_current,is_publish:1})
+                // this.$emit('mainInit',val);
+                //消息状态
+                this.$store.dispatch('getNotificationStatus',{
+                    shop_id:this.shop_list_current
+                })
+            },
+            toStatistics(val){
+                this.$router.push({name:val,params:{val}})
+            }
+        },
+        created (){
+            this.list_current = this.shop_list_current
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+@import '../../assets/css/chartlist.scss';
+.dateShowBox{
+      width: 1024px;
+      height: 389px;
+      background-color: rgba(255, 255, 255, 1);
+      margin-top: 6px;
+      -webkit-box-shadow: 0 0 1px #ccc;
+      -moz-box-shadow: 0 0 1px #ccc;
+      box-shadow: 0 0 1px #ccc;
+}
+.dateSearchBox{
+    width: 100%;
+    height: 80px;
+    line-height: 80px;
+}
+.el-form-item{
+    margin: 0;
+}
+.shortcutBox{
+    display: inline-block;
+    width: 175px;
+    height:80px;
+    margin-left: 130px;
+    margin-right: 24px;
+    position: relative;
+    & >div:nth-child(1){
+        width:100%;
+        height: 21px;
+        line-height: 21px;
+        background-color: rgba(242, 242, 242, 1);
+        position: absolute;
+        top:50%;
+        transform: translate(0,-50%);
+        display: flex;
+        & div{
+            flex-grow:1;
+            font-size: 12px;
+            font-weight: normal;
+            font-style: normal;
+            font-stretch: normal;
+            line-height: 20px;
+            letter-spacing: 0.7px;
+            color: #808080;
+            text-align: center;
+            cursor: pointer;
+        }
+    }
+}
+#dataEntering{
+    position: absolute;
+    right:20px;
+    top: 50%;
+    transform: translate(0,-50%);
+    padding: 10px 10px;
+}
+.shortcutBtn .tab{
+    background-color: #48a7ff;
+    color: #ffffff!important;
+}
+</style>

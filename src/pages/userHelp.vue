@@ -1,0 +1,213 @@
+<template>
+    <div class="userHelp">
+         <!-- 页面头部导航 -->
+        <main-nav :indexMenu="'/userHelp'"></main-nav>
+        <div class="content" v-slim-scroll>
+            <div class="tit">
+                <span>系统使用帮助</span>
+            </div>
+            <el-row class="user-body clearfix" >
+                <el-col :span="24">
+                    <div class="user-left clearfix">
+                        <el-row class="cellitem">
+                            <el-col :span="7">软件下载</el-col>
+                            <el-col :span="8" class="listDec">
+                                <div>
+                                    灵友v_1.1
+                                </div>
+                            </el-col>
+                            <el-col :span="9" class="listDown">
+                                <div>点击下载</div>
+                            </el-col>
+                        </el-row>
+                        <el-row class="cellitem">
+                            <el-col :span="7">帮助文档下载</el-col>
+                            <el-col :span="8" class="listDec">
+                                <div>
+                                    《帮助文档》
+                                </div>
+                                <div>
+                                    《灵友产品操作手册》
+                                </div>
+                            </el-col>
+                            <el-col :span="9" class="listDown">
+                                <div>点击下载</div>
+                                <div>点击下载</div>
+                            </el-col>
+                        </el-row>
+                        <el-row class="cellitem">
+                            <el-col :span="7">浏览器</el-col>
+                            <el-col :span="8" class="listDec">
+                                <div>
+                                    为达到最佳效果推荐使用：
+                                </div>
+                                <div>
+                                    Internet Explorer8
+                                </div>
+                                <div>
+                                    Chrome
+                                </div>
+                            </el-col>
+                            <el-col :span="9" class="listDown">
+                                <div style="visibility: hidden;"></div>
+                                <div>点击下载</div>
+                                <div>点击下载</div>
+                            </el-col>
+                        </el-row>
+                        <el-row class="cellitem">
+                            <el-col :span="7">联系方式</el-col>
+                            <el-col :span="8" class="listDec">
+                                <div>
+                                    0592-88888888
+                                </div>
+                                <div>
+                                    Internet Explorer8
+                                </div>
+                                <div>
+                                    Chrome
+                                </div>
+                            </el-col>
+                            <el-col :span="9" class="listDown">
+                                <!-- <div>点击下载</div> -->
+                            </el-col>
+                        </el-row>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</template>
+
+<script>
+import MainNav from '../components/MainNav';
+export default {
+        name:"userHelp",
+        components:{MainNav},
+        data (){
+            return {
+              isActive:false
+            }
+        },
+        methods:{
+            toggle(){
+                this.isActive = !this.isActive;
+            }
+        },
+        watch:{
+            '$route':function(){
+                // this.currentPath = this.$route.name
+                // console.log(this.currentPath)
+            }
+        },
+        created(){
+            // console.log(this.$route.name)
+        }
+
+    }
+</script>
+
+<style scoped lang="scss">
+   @import '../../static/variable.scss';
+   @import '../assets/css/userhelp.scss';
+    .userHelp{
+        height: 100%;
+    }
+    .clearfix{
+        &:after{
+            display: inline-block;
+            content: '';
+            clear: both;
+        }
+    }
+    .content {
+        width: 1024px!important;
+        margin: 0 auto;
+        padding:0 30px;
+        height: 100%;
+        margin-top: 6px;
+        background-color: $white;
+        box-shadow:0 0 5px #ccc;
+       & > .tit{
+           width: 100%;
+           height: 70px;
+           line-height: 70px;
+           font-family: MicrosoftYaHei;
+            font-size: 18px;
+            font-weight: normal;
+            font-stretch: normal;
+            letter-spacing: 1px;
+            color: #4d4d4d;
+            
+            
+            
+        }
+    }
+    .user-body{
+        width: 100%;
+        height: 100%;
+        border-top: 1px solid #ccc;
+        
+        
+        & .el-col.el-col-5{
+             height: 100%;
+            padding-right: 3px;
+            
+        }
+        & .el-col.el-col-19{
+            height: 100%;
+            padding-left: 3px;
+        }
+        & .user-left,& .user-right{
+            width: 100%;
+            height: 100%;
+            min-height: 1100px;
+            background-color:$white;
+            overflow: hidden;
+        }
+    .titList{
+        display:inline-block;
+        width: 100%;
+        line-height: 40px;
+        font-family: MicrosoftYaHeiLight;
+        font-size: 14px;
+        font-weight: normal;
+        font-stretch: normal;
+        letter-spacing: 0px;
+        color: #4c4c4c;
+
+        user-select: none;
+    }
+    .cellitem{
+        text-align: left;
+        font-size: 14px;
+        line-height: 40px;
+        padding: 30px 0;
+        color: #4c4c4c;
+        border-bottom:1px #ccc dotted ;
+        &:last-child{
+            
+            border-bottom:none;
+        }
+    }
+    .menuList{
+        display:inline-block;
+        width: 100%;
+        line-height: 40px;
+        font-family: MicrosoftYaHeiLight;
+        font-size: 14px;
+        font-weight: normal;
+        font-stretch: normal;
+        letter-spacing: 0px;
+        color: #4c4c4c;
+        padding-left: 39px;
+        &:hover{
+            background-color: #4198ff;
+            color: #ffffff;
+        }
+        &.router-link-active{
+            background-color: #4198ff;
+            color: #ffffff; 
+        }
+       }
+    }
+</style>
