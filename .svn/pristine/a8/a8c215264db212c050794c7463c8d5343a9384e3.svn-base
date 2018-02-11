@@ -1,0 +1,374 @@
+<template>
+    <div class="app" ref="videoWin" v-if="lists">
+        <div class="playerBg">
+            <img  v-if="lists.is_fault=='0'?false:true"   src="../../assets/img/software/off-line.png" alt="离线">
+            <div class="videoTopBox" v-if="isStartVideo">
+              <span>{{currentTimer}}</span>
+              <i class="iconfont icon-luzhi startVideo"></i>
+            </div>
+        </div>
+        <video-player 
+        v-if="lists.is_fault=='0'?true:false" 
+        class="vjs-custom-skin" 
+        ref="videoPlayer"
+        :options="playerOptions"
+        @ready="onPlayerReadied"
+        @timeupdate="onTimeupdate"
+        @play="onPlayerPlay($event)"
+        @pause="onPlayerPause($event)"
+        customEventName="changed"
+        @changed="playerStateChanged($event)"
+        >
+        </video-player>
+        <transition name="fade">
+            <div v-if="showControl" class="controlBar" ref="videoControl">
+                <span class="tesn_tit">设备：{{lists.name}}</span>
+                <ul class="BarRight" >
+                    <li>
+                        <i @click="playVideoEvent" :class="['iconfont',bplay?'icon-zanting':'icon-bofang']"></i>
+                    </li>
+                    <li class="cutDefinition">
+                        <span>{{currentFlow}}</span>
+                        <ul class="selectDefin">
+                            <li @click= changeFlow(item) v-for="item in currentVideo" :key="item">{{item}}</li>
+                        </ul>
+                    </li>
+                    <li @click="screenshot"><i class="iconfont icon-icon--"></i></li>
+                    <li @click="transcribe">
+                        <i :class="['iconfont','icon-luzhi',isStartVideo?'startVideo':'']"></i>
+                    </li>
+                    <li>
+                        <i @click="toggleFullScreen" class="iconfont icon-quanping"></i>
+                    </li>
+                </ul>
+            </div>
+        </transition>
+    </div>
+</template>
+<script>
+import {videoAdd} from '../../api/global';
+import {mapGetters} from 'vuex';
+export default {
+  name: "realPalyer",
+  props:['lists'],
+  data() {
+    return {
+      currentTech: "html5",
+      isStartVideo:false,
+      CurrentScreenImg:"http://www.taopic.com/uploads/allimg/140729/240450-140HZP45790.jpg",
+      showControl:true,
+      handleControl:null,
+      currentFlow:"高清",
+      timersInterval:null,
+      currentTimer:null, //录制计时显示
+      start_time:"", //录制计时YYYY
+      end_time:"",
+      currentVideo:['高清','流畅'],
+      bplay:false,   //是否播放
+      playerOptions: {
+        overNative: false,
+        autoplay: false,
+        controls: false,
+        techOrder: ["html5"],
+        sourceOrder: true,
+        flash: { hls: { withCredentials: false } },
+        html5: { hls: { withCredentials: false } },
+        sources: [
+          {
+            withCredentials: false,
+            type: "application/x-mpegURL",
+            src:""
+            // src:"http://video.dianliubao.com:8080/hls/00e070747d47.m3u8"
+            // src:""
+          }
+        ],
+        poster: "",
+        controlBar: {
+          playToggle: false, //开关
+          volumePanel: {
+            //声音控制器
+            inline: false,
+            vertical: true
+          },
+          currentTimeDisplay: false, //当前时间
+          timeDivider: false,
+          durationDisplay: false,
+          progressControl: {
+            // 进度条
+            SeekBar: {}
+          },
+          liveDisplay: false,
+          remainingTimeDisplay: false,
+          customControlSpacer: false, //当前时间
+          playbackRateMenuButton: false,
+          chaptersButton: false,
+          descriptionsButton: false,
+          subtitlesButton: false,
+          captionsButton: false,
+          audioTrackButton: false,
+          fullscreenToggle: true, // 全屏
+          muteToggle: false //禁音按钮
+        }
+      }
+    };
+  },
+  computed: {
+    player() {
+      return this.$refs.videoPlayer.player;
+    },
+    ...mapGetters([
+        'userInfo',
+        'shop_list_current',
+    ])
+  },
+  created() {
+  },
+  mounted() {
+    // console.log(this.lists)
+     this.playAddSrc();
+     this.$refs.videoWin.addEventListener('mouseenter',()=>{
+        this.showControl = true;
+        this.restBarTimeout();
+      })
+
+          this.$refs.videoWin.addEventListener('mousemove',()=>{
+        this.showControl = true;
+        this.restBarTimeout();
+        })
+  },
+  beforeDestory(){
+        if (this.handleControl) {
+            clearTimeout(this.handleControl);
+            this.handleControl = null;
+        }
+        else if(this.isStartVideo){
+           clearInterval(this.timersInterval);
+        }
+  },
+  methods: {
+      onPlayerReadied(player) {
+          this.player.on('click', (event)=>{
+          event.preventDefault();
+          this.$router.push({name:"recording",params:{currentVideo:this.lists}});
+      });
+        this.$refs.videoWin.addEventListener('mouseenter',()=>{
+        this.showControl = true;
+        this.restBarTimeout();
+      })
+        this.$refs.videoWin.addEventListener('mousemove',()=>{
+        this.showControl = true;
+        this.restBarTimeout();
+        })
+
+    },
+    onTimeupdate(e) {
+      // console.log('currentTime', e.cache_.currentTime)
+    },
+    restBarTimeout() {
+        if (this.handleControl) {
+            clearTimeout(this.handleControl);
+            this.handleControl = null;
+        }
+        this.handleControl = setTimeout(() => {
+            this.showControl = false;
+        }, 3000);
+    },
+    playVideoEvent(){
+      if (this.bplay) {
+        this.player.pause();
+      }else{
+        this.player.play();
+      }
+    },
+    toggleFullScreen(){
+        this.player.requestFullscreen();
+    },
+    changeFlow(val){
+        this.currentFlow = val;
+        if(this.currentFlow=="高清"){
+          this.playerOptions.sources[0].src= this.lists.te_rtsp_0;
+        }else{
+          this.playerOptions.sources[0].src= this.lists.te_rtsp_1;
+        }
+    },//截图
+    screenshot(){
+     var  video = $(this.player.el_.childNodes).get(0);
+      var canvas = document.createElement("canvas");
+      canvas.width = 478
+      canvas.height = 285
+      canvas.getContext('2d')
+      .drawImage(video, 0, 0, canvas.width, canvas.height);
+      var imgUrl = canvas.toDataURL();
+      this.$emit('uploadImg',imgUrl);
+  },
+   playAddSrc(){
+      this.playerOptions.sources[0].src= this.lists.te_rtsp_0;
+   },
+  transcribe(){
+    if(this.bplay){
+          if(this.isStartVideo){
+            this.end_time = this.getCurrentTime();
+            this.videoAddReal();
+            clearInterval(this.timersInterval);
+        }else{
+            this.start_time = this.getCurrentTime();
+            this.timerVdieo();
+        }
+        this.currentTimer=null;
+        this.isStartVideo = !this.isStartVideo;
+    }else{
+         this.$message.error('录制需在播放状态才可录制');
+    }
+  },
+  onPlayerPlay(){
+    this.bplay = true;
+  },
+  onPlayerPause(){
+    this.bplay = false;
+  }, //录像状态改变
+  playerStateChanged(){
+    // console.log(123)
+  },
+  two_char(n){
+    return n >= 10 ? n : '0' + n;
+  },  //计时
+  timerVdieo(){
+    var sec=0;
+    var self = this;
+    this.timersInterval=setInterval( ()=>{
+          sec++;
+          var date = new Date(0, 0)
+          date.setSeconds(sec);
+          var h = date.getHours(), m = date.getMinutes(), s = date.getSeconds();
+          self.currentTimer = self.two_char(h) + ":" + self.two_char(m) + ":" + self.two_char(s);
+          }, 1000);
+  },
+  videoAddReal(){
+    videoAdd({
+      shop_id:this.lists.shop_id,
+      user_id:this.userInfo.id,
+      device_id:this.lists.id,
+      te_sn:this.lists.te_sn,
+      start_time:this.start_time,
+      end_time:this.end_time,
+    }).then(res=>{
+      if(res.data.status=="200"){
+          this.$message({
+          message: '录像已上传到相册',
+          type: 'success'
+        });
+      }
+    })
+  },
+  getCurrentTime(){
+    return new Date().Format('yyyy-MM-dd hh:mm:ss')
+  }
+},
+  watch:{
+
+  }
+}
+</script>
+
+<style scoped lang="scss">
+.app {
+  position: relative;
+  cursor: pointer;
+  & .video {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 9;
+  }
+  .playerBg{
+    width: 100%;
+    height:100%;
+    position: absolute;
+    top:0;
+    left:0;
+  }
+  .controlBar {
+    height: 40px;
+    width: 100%;
+    line-height: 40px;
+    background-color: #333;
+    position: absolute;
+    bottom: 0;
+    z-index: 10;
+    opacity: 0.8;
+    color: #ffffff;
+    cursor:initial;
+    & .tesn_tit {
+      font-size: 12px;
+      padding: 0 20px 0 12px;
+    }
+    & .BarRight {
+      float: right;
+      cursor: pointer;
+      & > li {
+        float: left;
+        line-height: 40px;
+        height: 40px;
+        padding: 0 10px;
+
+        & .iconfont {
+          font-size: 18px;
+        }
+        & .iconfont:hover{
+          color: #4198ff;
+        }
+        & .iconfont.icon-icon--{
+          font-size: 22px;
+        }
+       
+      }
+    }
+  }
+  .cutDefinition {
+    font-size: 12px;
+    position: relative;
+    &:hover .selectDefin {
+      display: block;
+    }
+    cursor: pointer;
+    .selectDefin {
+      display: none;
+      position: absolute;
+      box-sizing: content-box;
+      left: 0;
+      top: -80px;
+      background: rgba(0, 0, 0, 0.8);
+      & > li {
+        box-sizing: content-box;
+        padding: 0 10px;
+        opacity: 1;
+        cursor: pointer;
+        &:hover {
+          background-color: #4198ff;
+        }
+      }
+    }
+  }
+}
+.videoTopBox{
+  position: absolute;
+  top:1em;
+  right:1em;
+  z-index:100;
+  color: #ff6648;
+  height: 20px;
+  line-height: 20px;
+  & > span{
+    font-size: 12px;
+    vertical-align: bottom;
+  }
+}
+ .startVideo{
+          color: #ff6648;
+      }
+.video-player.vjs-custom-skin {
+  width: 100%;
+  height: 100%;
+}
+
+</style>

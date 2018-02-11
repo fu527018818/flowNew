@@ -1,0 +1,323 @@
+<template>
+  <div ref="view" class="view clearFix">
+      <swiper :options="swiperOption" id="bar" ref="bar" class="bar clearFix">
+          <swiper-slide>
+              <div class="temp"></div>
+          </swiper-slide>
+          <swiper-slide>
+                <div class="timeMark" :style="'transform:translateX('+ maxEndTimeDest +'px)'"></div>
+                <ul class="timebar clearfix"><li class="active"></li><li v-for="i in 144" :key="i" :class="{active:i%6 == 0||i==144}"><span v-if="i%6 == 0&&i/6%2==1&&i!=144">{{Math.floor(i/6)%24}}:00</span></li></ul>
+          </swiper-slide>
+          <swiper-slide>
+                <div class="temp"></div>
+          </swiper-slide>
+      </swiper>
+      <div class="redline"></div>
+  </div>
+</template>
+<script>
+import { swiper, swiperSlide } from "vue-awesome-swiper";
+import "swiper/dist/css/swiper.css";
+
+const MAX_TIME = 86400;
+export default {
+  name: "timebar",
+  components: { swiper, swiperSlide },
+  props: {
+    sendTime: {
+      type: Function //拖动时间条回调
+    },
+    startTime: {
+      type: Number, //按秒为单位
+      default:0
+    },
+    bToday: {
+      type: Boolean, //是否当天
+      default: false
+    }
+  },
+  data() {
+    return {
+      viewWidth: 0, //容器宽
+      swiperOption: {
+        slidesPerView: "auto",
+        freeMode: true,
+        freeModeMomentumBounce: false,
+        freeModeMomentumVelocityRatio: 0,
+        resistanceRatio: 0,
+        on: {
+          touchStart:this.slideChangeTransitionOn,
+          touchEnd: this.slideChangeTransitionEnd
+        }
+      },
+      bTouch:false,
+      maxEndTime: MAX_TIME,
+      intervalHandle: null
+    };
+  },
+  created() {},
+  mounted() {
+    this.viewWidth = this.$refs.view.clientWidth;
+    //设置开始时间
+    this.setCurrtTime(this.startTime);
+    this.maxEndTime = this.countMaxEndTime();
+    this.resetUpdate();
+  },
+  beforeDestory() {
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+      this.intervalHandle = null;
+    }
+  },
+  computed: {
+    swiper() {
+      return this.$refs.bar.swiper;
+    },
+    maxWidth() {
+      //最大滚动距离
+      if (
+        this.$refs.bar &&
+        this.$refs.bar.swiper &&
+        this.$refs.bar.swiper.slides[1]
+      ) {
+        return this.$refs.bar.swiper.slides[1].clientWidth;
+      }
+      return 867;
+    },
+    maxEndTimeDest() {
+      return this.maxEndTime / MAX_TIME * this.maxWidth;
+    }
+  },
+  methods: {
+    /**
+     * 触发点击监听
+     */
+    slideChangeTransitionOn(event){
+      this.bTouch = true;
+    },
+    /**
+     * 拖动结束监听
+     */
+    slideChangeTransitionEnd(event) {
+      let endX = Math.abs(this.swiper.getTranslate());
+      let curtime = endX / this.maxWidth * MAX_TIME;
+      // let hour = Math.floor(curtime/(60*60));
+      // let min = Math.floor(curtime/60%60);
+      // let second = Math.floor(curtime%60);
+      let curData = this.formatTime(curtime);
+
+      if (endX > this.maxEndTimeDest) {
+        this.setCurrtTime(this.maxEndTime);
+        let maxData = this.formatTime(this.maxEndTime);
+        this.sendCurrtTime(maxData.hour, maxData.min, maxData.second);
+        return;
+      }
+
+      this.sendCurrtTime(curData.hour, curData.min, curData.second);
+      this.bTouch = false;
+    },
+    /**
+     * 回调结果时间
+     */
+    sendCurrtTime(hour, min, second) {
+      let time = {
+        hour:hour,
+        min:min,
+        second:second
+      }
+      this.$emit("sendTime", time);
+    },
+    /**
+     * 设置时间
+     * time  当前时间
+     */
+    setCurrtTime(time) {
+      if (time>MAX_TIME) {
+        time = MAX_TIME;
+      }
+      let date = -time / MAX_TIME * this.maxWidth;
+      this.swiper.setTransition(300);
+      this.swiper.setTranslate(date);
+    },
+    /**
+     * 获取当天当前时间
+     */
+    countMaxEndTime() {
+      if (this.bToday) {
+        let date = new Date();
+        let hour = date.getHours();
+        let min = date.getMinutes();
+        let second = date.getSeconds();
+        return hour * 60 * 60 + min * 60 + second;
+      }
+      return MAX_TIME;
+    },
+    /**
+     * 时间戳转时分秒
+     */
+    formatTime(time) {
+      let hour = Math.floor(time / (60 * 60));
+      let min = Math.floor((time / 60) % 60);
+      let second = Math.floor(time % 60);
+      return {
+        hour: hour,
+        min: min,
+        second: second
+      };
+    },
+    /**
+     * 时分秒转时间戳
+     */
+    formatTimeToDate(hour, min, second){
+      return hour * 60 * 60 + min * 60 + second;
+    },
+    /**@augments
+     * 重置时间轴刷新
+     */
+    resetUpdate(){
+      if (this.intervalHandle) {
+        clearInterval(this.intervalHandle);
+        this.intervalHandle = null;
+      }
+      this.intervalHandle = setInterval(() => {
+        this.maxEndTime = this.countMaxEndTime();
+      }, 1000);
+    }
+  },
+  watch: {
+    bToday(){
+      this.resetUpdate();
+    },
+    startTime(val,old){
+      if (!this.bTouch) {
+        // console.log(val)
+       this.setCurrtTime(val);
+      }
+     
+    }
+  }
+};
+</script>
+<style lang='scss' scoped>
+.view {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  overflow-x: scroll;
+  font-size: 0;
+  border:1px solid #cccccc;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  cursor: pointer;
+  user-select: none;
+  .bar {
+    height: 100%;
+    white-space: nowrap;
+    font-size: 0;
+    cursor: pointer;
+  }
+}
+.barImg {
+  display: inline-block;
+  width: 867px;
+  pointer-events: none;
+}
+
+.swiper-container {
+  width: 100%;
+  height: 100%;
+}
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+  width: 50%;
+
+  /* Center slide text vertically */
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.swiper-slide:nth-child(2n) {
+  width: 867px !important;
+}
+.swiper-slide:nth-child(1n),
+.swiper-slide:nth-child(3n) {
+  width: 50%;
+}
+.redline {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background-color: #ff6648;
+}
+.timeMark {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: #c4c4c4;
+}
+.timebar {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  
+  li {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+    width: 1px;
+    margin-right: 5px;
+   color: #4c4c4c;
+    &:last-child {
+      margin-right: 0;
+    }
+    &:before,
+    &:after {
+      display: block;
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      left: 0;
+      background-color: #999;
+    }
+    &:before {
+      top: 0;
+    }
+    &:after {
+      bottom: 0;
+    }
+    &.active:before,
+    &.active:after {
+      height: 4px;
+    }
+    span {
+      position: absolute;
+      z-index: 5;
+      left: 0;
+      top: 0;
+      transform: translateX(-50%);
+      line-height: 40px;
+      font-size: 14px !important;
+    }
+  }
+}
+</style>
+

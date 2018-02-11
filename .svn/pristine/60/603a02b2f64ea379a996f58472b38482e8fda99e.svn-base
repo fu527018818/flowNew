@@ -1,0 +1,178 @@
+<template>
+    <div class="app">
+        <main-nav :indexMenu="'/software'"></main-nav>
+        <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                      <search-date :isShowDate="false" :tit="'监控'" :isShowId="true" @seachtrigger="seachtrigger">
+                          <div slot="softWare" class="softWareBox">
+                               <el-dropdown 
+                                  style="line-height:1px;vertical-align: middle;" 
+                                  @visible-change="changeDrop"
+                                  placement="top"
+                                  >
+                                    <span class="el-dropdown-link">
+                                        <img v-if="isDrop" src="../../assets/img/software/default/iphone.png" alt="">
+                                        <img v-else src="../../assets/img/software/glide/iphone.png" alt="">
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>联系人：韩梅梅</el-dropdown-item>
+                                        <el-dropdown-item>电话：0592-909090</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><el-button type="primary" @click="$router.go(-1)" class="goBack">返回</el-button>
+                          </div>
+                      </search-date>
+                      <div class="realTimeBox">
+                          <div class="playerBox clearFix">
+                              <real-player :lists="currentVideo"  @uploadImg="uploadImg"></real-player>
+                          </div>
+                           <record-shortcut></record-shortcut>
+                          <div class="timeBarBox">
+                              <time-bar @sendTime="selectBarTime" :bToday="true" :startTime="1518"></time-bar>
+                          </div>
+                         
+                         
+                      </div>
+                </div>
+                 <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+        <el-dialog
+            title="截图预览"
+            :visible.sync="showBigHeader"
+            width="40%"
+            :before-close="handleClose"
+            center>
+            <img class="bigHeader" :src="screenshotUrl" alt="">
+             <div slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="dialogFormVisible">上传到相册</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/common/searchDate';
+import TimeBar from '../../components/common/timeBar';
+import realPlayer from '../../components/realTimePlayer/realPalyer';
+import recordShortcut from '../../components/softWare/recordShortcut';
+import {dataURLtoBlob,upload} from '../../assets/js/uploadImg';
+import {mapGetters} from 'vuex';
+    export default {
+        name:"recording", //录像
+        components:{MainNav,searchDate,realPlayer,TimeBar,recordShortcut},
+        data(){
+            return{
+                isDrop:true,
+                currentDateList:["11-11","11-12","11-13","11-14","11-15","11-16","11-17"],
+                showBigHeader:false,
+                screenshotUrl:"",
+                currentVideo:"",
+                date:""
+            }
+        },
+        computed:{
+             ...mapGetters([
+               'userInfo',
+               'shop_list_current',
+               'secret',
+               'token'
+           ])
+        },
+        methods:{
+            changeDrop(isDrop){
+                this.isDrop = !isDrop
+            },
+            seachtrigger(val){
+                if(typeof val==="object"&&!val.length){
+                    this.$router.go(-1);
+                }
+            },
+            uploadImg(imgUrl){
+               this.screenshotUrl = imgUrl;
+               this.showBigHeader = true;
+                },
+                handleClose(done){
+                    done();
+                    this.screenshotUrl = "";
+                    
+                }, //上传图片
+                dialogFormVisible(){
+                    var file = dataURLtoBlob(this.screenshotUrl);
+                    upload(
+                         '/utils/upload',
+                            file,
+                            this.token,
+                            this.userInfo.id,
+                            this.secret,
+                            'images'
+                    ).then(res=>{
+                            this.showBigHeader = false;
+                            this.$message({
+                                message:'图片已上传到相册',
+                                type: 'success'
+                                });
+                            this.screenshotUrl = "";
+                    })
+                    .catch(err=>{
+                        this.$message.error(err);
+                    })
+                },
+                  selectBarTime(data){
+                    console.log(data)
+                }
+            },
+            created(){
+                if(this.$route.params.currentVideo){
+                    this.currentVideo =this.$route.params.currentVideo;
+                    ls.set('currentVideo',this.currentVideo)
+                }else{
+                    this.currentVideo = ls.get('currentVideo')
+                }
+              
+            },
+            mounted(){
+             
+            },
+           
+        }
+</script>
+
+<style scoped lang="scss">
+    .softWareBox{
+        text-align: right;
+        padding-right:21px;
+        & .el-dropdown{
+            padding:0 10px;
+        }
+        & .img_mid{
+            vertical-align: middle;
+            padding: 0 10px;
+        }
+    }
+    .goBack{
+        padding:12px 5px;
+        border-radius: 0;
+        margin:0 10px;
+    }
+
+     .realTimeBox{
+        width: 1024px;
+        min-height: 1200px;
+        margin-top:6px;
+        background-color: #ffffff;
+        padding: 25px;
+        box-sizing:border-box;
+    }
+    .playerBox{
+       height:575px;
+    }
+    .bigHeader{
+        width: 100%;
+        display:inline-block;
+    }
+    .timeBarBox{
+        padding:0 20px;
+    }
+</style>

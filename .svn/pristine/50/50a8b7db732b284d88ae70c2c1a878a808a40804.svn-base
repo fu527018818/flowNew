@@ -1,0 +1,74 @@
+import * as types from '../../mutation-types';
+import  loginApi from '../../../api/global';
+const state={
+    graphic:"",
+    chart:[],
+    notice_title:""
+}
+const getters={
+    graphic:state=>state.main.graphic
+}
+const actions={
+    main_init({commit},shop_id){
+        return new Promise((resolve,reject)=>{
+            loginApi.mainInit(shop_id).then(
+                res=>{
+                    if(res.data.status == 200){
+                        var data = res.data.data
+                        data.graphic.data1.data= format(data.graphic.data1.data);
+                        data.graphic.data2.data=format(data.graphic.data2.data);
+                        function format(data){
+                            var folw={};
+                            folw.dateX = [];
+                            folw.y1 = [];
+                            folw.y2 = []
+                            for(var item in data){
+                                folw.dateX.push(data[item].name);
+                                folw.y1.push(data[item].data[0]*1);
+                                folw.y2.push(data[item].data[1]*1);
+                            }
+                            return folw
+                        }
+                        commit('SET_MAIN_VAL',res.data.data)
+                    }
+                    resolve(res)
+                }
+            ).catch(err=>{
+                reject(err)
+            })
+        })
+    },
+    notice_list({commit},data){
+        return new Promise((resolve,reject)=>{
+            loginApi.noticeList(data).then(res=>{
+                commit('SET_NOTICE_TITLE',res.data.data.lists)
+                resolve(res)
+            }).catch(err=>{
+                console.log(err)
+            })
+        })
+    }
+}   
+const mutations={
+    [types.SET_MAIN_VAL](states,data){
+            delete data.chart.cumulative_month; //删除PC不使用字段
+            states.chart = [];
+            states.chart.push(data.chart.turnover);
+            states.chart.push(data.chart.passenger);
+            states.chart.push(data.chart.volume);
+            states.chart.push(data.chart.volume_rate);
+            states.chart.push(data.chart.unit_price);
+            states.chart.push(data.chart.return_guest);
+            //states.chart = data.chart;
+            states.graphic =data.graphic
+    },
+    [types.SET_NOTICE_TITLE](states,data){
+        states.notice_title = data
+    }   
+}
+export default{
+    state,
+    getters,
+    actions,
+    mutations
+}

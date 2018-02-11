@@ -1,0 +1,50 @@
+import {objKeySort,encryptLogin,decode,signSort} from '../../utils/encryption'
+/*
+url 地址
+file 二进制图片文件
+token
+id
+secret
+name  文件名相当于input type="file"=> name
+*/
+export function upload(url,file,token,id,secret,name){
+    var self = this;
+    let fd = new FormData();
+    fd.append(name,file,Math.random().toString(36).substr(2)+".png");
+    var obj ={};
+    obj.client= "pc";
+    obj.version ="1.0";
+    obj.params = encryptLogin(secret.accept,{});
+    obj.sign = signSort({});
+    obj.id = id
+    obj.token =token;
+    for(var key in obj){
+        fd.append(key,obj[key]);
+    }
+    return new Promise((resolve,reject)=>{
+        $.ajax({
+            url:process.env.BASE_API+url,
+            type: 'POST',
+            cache: false,
+            data: fd,
+            contentType: false,
+            processData: false
+            }).done(function(res) {
+                    var data = decode(secret.response,res);
+                    if(data.status=="200"){
+                        resolve(data.data.url)
+                    }
+            }).fail(function(err) {
+                reject(err)
+         });
+    })
+}
+export function dataURLtoBlob(base64Data) { 
+    var byteString; 
+    if (base64Data.split(',')[0].indexOf('base64') >= 0) byteString = atob(base64Data.split(',')[1]); else byteString = unescape(base64Data.split(',')[1]); var mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0]; var ia = new Uint8Array(byteString.length); for (var i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+    return new Blob([ia], {type:mimeString}); 
+}
+export default{
+    upload,
+    dataURLtoBlob
+}

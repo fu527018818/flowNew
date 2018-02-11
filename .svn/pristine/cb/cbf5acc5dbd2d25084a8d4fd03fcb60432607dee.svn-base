@@ -1,0 +1,121 @@
+<template>
+        <div class="shortCutBox">
+            <div class="calendarBtn">
+                <i class="iconfont icon-calendar" @click="CalendarBtn"></i>
+                <div class="selectDate">
+                    <el-date-picker
+                        ref="selectdDate"
+                        v-model="clearDate"
+                        type="date"
+                        @change="getChangeDate"
+                        value-format="yyyy-M-d"
+                        placeholder="选择日期">
+                    </el-date-picker> 
+                </div>
+               
+            </div><ul class="shortcutDate">
+                    <li v-for="(item,index) in shortcutList" :key="item"><span @click="selectShortcut(item,index)" :class="['exactDate',shortcutIndex==index?'active':'']">{{item}}</span></li>
+            </ul>
+        </div>
+</template>
+
+<script>
+    import formatDate from '../../assets/js/dateSelect'; 
+    export default {
+        name:"recordShortcut",
+        data(){
+            return{
+                clearDate:"",
+                currentDate:"",
+                shortcutList:[],
+                shortcutIndex:0,
+            }
+        },
+        methods:{
+            CalendarBtn(){
+                this.date = "";
+                this.$refs.selectdDate.focus();
+            },
+            getChangeDate(val){
+               if(val){
+                    this.currentDate = val;
+                    this.clearDate = "";
+                    var eleArr = this.currentDate.split('-');
+                    this.shortcutList =formatDate.getShortcutDate(eleArr[0]*1,eleArr[1]*1 -1,eleArr[2]*1);
+               }else{
+                   return;
+               }
+            },
+            selectShortcut(val,index){
+                this.shortcutIndex=index
+                console.log(val,index)
+            }
+
+        },
+        created(){
+             this.shortcutList =formatDate.getShortcutDate();
+             console.log(this.shortcutList)
+        }
+
+    }
+</script>
+
+<style scoped lang="scss">
+    .shortCutBox{
+        height: 70px;
+        line-height:70px;
+    }
+    .calendarBtn{
+        width: 41px;
+        display: inline-block;
+        position: relative;
+        overflow: hidden;
+        z-index: 1000;
+        & .iconfont.icon-calendar{
+            font-size: 20px;
+            position: relative;
+            z-index: 1000;
+            cursor: pointer;
+            padding:21px 21px 21px 0;
+        }
+    }
+    .shortcutDate{
+            display: inline-block;
+         
+            position: absolute;
+            & li{
+                float: left;
+                height: 70px;
+                line-height: 70px;
+                width: 55px;
+                text-align: center;
+                cursor: pointer;
+                position: relative;
+                margin-right:10px;
+                .exactDate{
+                    font-size: 14px;
+                    display: block;
+                    line-height: 20px;
+                    position: absolute;
+                    width: 100%;
+                    top:50%;
+                    transform:translate(0,-50%);
+                    color: #4c4c4c;
+                   &.active{
+                       background-color: #4198ff;
+                       color: #ffffff;
+                   }
+                }
+                
+            }
+        }
+    .selectDate{
+        position: absolute;
+        top:0;
+        left:0;
+        z-index:0;
+        opacity: 0;
+        // visibility: hidden;
+        cursor: pointer;
+    }
+</style>

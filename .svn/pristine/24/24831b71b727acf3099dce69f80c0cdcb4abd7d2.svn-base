@@ -1,0 +1,96 @@
+<template>
+    <div class="app">
+        <main-nav :indexMenu="'/software'"></main-nav>
+        <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                      <search-date :isShowDate="false" :tit="'监控'" :isShowId="true"  @seachtrigger="seachtrigger">
+                          <div slot="softWare" class="softWareBox">
+                               <el-dropdown 
+                                  style="line-height:1px;vertical-align: middle;" 
+                                  @visible-change="changeDrop"
+                                  placement="top"
+                                  >
+                                    <span class="el-dropdown-link">
+                                        <img v-if="isDrop" src="../../assets/img/software/default/iphone.png" alt="">
+                                        <img v-else src="../../assets/img/software/glide/iphone.png" alt="">
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>联系人：韩梅梅</el-dropdown-item>
+                                        <el-dropdown-item>电话：0592-909090</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><el-button type="primary" class="goBack">返回</el-button>
+                          </div>
+                      </search-date>
+                      <div class="realTimeBox">
+                          <div class="playerBox">
+                              <real-player></real-player>
+                              <time-bar @sendTime="selectBarTime"></time-bar>
+                          </div>
+                      </div>
+                </div>
+                 <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/common/searchDate';
+import TimeBar from '../../components/common/timeBar';
+import realPlayer from '../../components/realTimePlayer/realPalyer';
+    export default {
+        name:"recording", //录像
+        components:{MainNav,searchDate,realPlayer,TimeBar},
+        data(){
+            return{
+                isDrop:true,
+                currentDateList:["11-11","11-12","11-13","11-14","11-15","11-16","11-17"],
+
+            }
+        },
+        methods:{
+            changeDrop(isDrop){
+                this.isDrop = !isDrop
+            },
+            seachtrigger(){
+
+            },
+            selectBarTime(data){
+                console.log(data)
+            }
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .softWareBox{
+        text-align: right;
+        padding-right:21px;
+        & .el-dropdown{
+            padding:0 10px;
+        }
+        & .img_mid{
+            vertical-align: middle;
+            padding: 0 10px;
+        }
+    }
+    .goBack{
+        padding:12px 5px;
+        border-radius: 0;
+        margin:0 10px;
+    }
+
+     .realTimeBox{
+        width: 1024px;
+        min-height: 820px;
+        margin-top:6px;
+        background-color: #ffffff;
+        padding: 25px;
+        box-sizing:border-box;
+    }
+    .playerBox{
+       height:575px;
+    }
+</style>

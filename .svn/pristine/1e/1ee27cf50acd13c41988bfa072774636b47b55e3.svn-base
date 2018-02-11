@@ -1,0 +1,151 @@
+<template>
+        <!-- 页面头部导航 -->
+        <div id="app">
+            <main-nav :indexMenu="'/main'"></main-nav>
+            <div class="contentBox" v-slim-scroll>
+                 <div class="contentBox_child">
+                    <div class="content">
+                        <!-- 消息提示 -->
+                        <main-notice @viewMore="viewMore"></main-notice>
+                        <!-- 搜索 -->
+                        <main-date-search @mainInit="mainInit"></main-date-search>
+                        <!-- colorChange改变卡片颜色 -->
+                        <card-rectangle :chart="chart" :colorChange="colorChange" @penetrate="penetrate"></card-rectangle>
+                        <!-- 首页第一张图表 -->
+                        <!-- <main-chart ref="cut_shop_init"></main-chart> -->
+                        <!-- 首页第二张图表 -->
+                        <div class="mainChart">
+                            <div class="chart" id="#contain1" style="height:500px">
+                            </div>
+                        </div>
+                        <div class="mainChart">
+                            <div class="chart" id="#contain2" style="height:500px">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="contentFooter isMd6"></div>
+               </div>
+            </div>
+            <!-- 提示公告 -->
+            <dialog-notice ref="cut_notice"></dialog-notice>
+        </div>
+</template>
+
+<script>
+import MainNav from '../components/MainNav';
+import MainNotice from '../components/main/MainNotice';
+import MainDateSearch from '../components/main/MainDateSearch';
+import MainChart from '../components/main/MainChart';
+import Highcharts from 'highcharts';
+import options1  from '../assets/js/chart-options';
+import dialogNotice from '../components/main/dialogNotice';
+import cardRectangle from '../components/common/cardRectangle'
+import {mainInit} from '../api/global';
+import formatterBg from '../assets/js/formatterbg';
+import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
+export default {
+        name:"main",
+        components:{MainNav,MainNotice,MainDateSearch,MainChart,dialogNotice,cardRectangle},
+        data (){
+            return {
+                colorChange:['营业额','营业利润'], //改变卡片颜色
+                charts1:null,
+                charts2:null,
+                updateTime:null
+            }
+        },
+        computed:{
+            ...mapState({
+                 chart:state =>state.main.chart   //初始化时数据为空，异步加载的数据
+            })
+        },
+        methods:{
+           mainInit(shop_list_current){
+               this.$store.dispatch('main_init',{shop_id:shop_list_current}).then(res=>{
+                   console.log(res)
+                            if(res.data.status=="200"){
+                                   var  chartData =  res.data.data.graphic;
+                                    this.charts1 = Highcharts.chart('#contain1',options1.addOptions(chartData.data1.name,chartData.data1.data.dateX,chartData.data1.data.y1,chartData.data1.data.y2,chartData.data1.line[0],chartData.data1.line[1]));
+                                    this.charts2 = Highcharts.chart('#contain2',options1.addOptions(chartData.data2.name,chartData.data2.data.dateX,chartData.data2.data.y1,chartData.data2.data.y2,chartData.data2.line[0],chartData.data2.line[1]));
+                            }
+                            this.restUpdate(shop_list_current);
+                })
+                    //调用子组建中实时更新的图表，在切换门店时
+                // this.$refs.cut_shop_init.realTime()
+           },
+            requestData(shop_list_current){
+                this.$store.dispatch('main_init',{shop_id:shop_list_current}).then(res=>{
+                            if(res.data.status=="200"){
+                                   var  chartData =  res.data.data.graphic;
+                                    this.charts1.update(options1.addOptions(chartData.data1.name,chartData.data1.data.dateX,chartData.data1.data.y1,chartData.data1.data.y2,chartData.data1.line[0],chartData.data1.line[1]));
+                                    this.charts2.update(options1.addOptions(chartData.data2.name,chartData.data2.data.dateX,chartData.data2.data.y1,chartData.data2.data.y2,chartData.data2.line[0],chartData.data2.line[1]));
+                            }
+                            this.restUpdate(shop_list_current); 
+                })
+                
+            },
+            restUpdate(shop_list_current){
+                if(this.updateTime){
+                    clearInterval(this.updateTime);
+                    this.updateTime = null;
+                }
+                this.updateTime = setInterval(()=>{
+                    this.requestData(shop_list_current)
+                },5000)
+            },
+           viewMore(){
+               this.$refs.cut_notice.showNotice();
+           }, //卡片穿透
+           penetrate(item){
+            let today = formatterBg.getClockerDate('今天');
+            let date = [today.start,today.end];
+              switch(item.name){
+                    case '营业额':
+                    this.$router.push({name:'turnover',params:{type:item.name,date:date}})
+                    break;
+                    case '客流量':
+                    this.$router.push({name:'passengerFlow',params:{type:item.name,date:date}})
+                    break;
+                    case '成交量':
+                    this.$router.push({name:'statisticsIndent',params:{type:item.name,date:date}})
+                    break;
+                    case '成交率':
+                    this.$router.push({name:'statisticsRefer',params:{type:item.name,date:date}})
+                    break;
+                }
+           }
+        },
+        created(){
+        },
+        mounted(){
+                this.mainInit(this.$store.getters.shop_list_current||ls.get('shop_list_current'));
+        },
+        beforeDestroy(){
+            if(this.updateTime){
+                clearInterval(this.updateTime);
+                this.updateTime = null;
+            }
+        }
+    }
+</script>
+<style scoped lang="scss">
+ @import '../../static/variable.scss';
+    .mainChart{
+        width: 100%;
+        height: 500px;
+        background-color: rgba(255, 255, 255, 1);
+        margin-top: 6px;
+        -webkit-box-shadow: 0 0 1px #ccc;
+        -moz-box-shadow: 0 0 1px #ccc;
+        box-shadow: 0 0 1px #ccc; 
+    }
+    #container{
+        position: relative;
+    }
+// 穿透卡片组件，更改鼠标手势样式
+  .dataListBox /deep/ .dataList{
+         & >div:nth-child(1),& >div:nth-child(5),& >div:nth-child(6),& >div:nth-child(7){
+             cursor: pointer;
+         }
+    }
+</style>

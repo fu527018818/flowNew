@@ -1,0 +1,138 @@
+<template>
+    <!-- 页面头部导航 -->
+    <div class="app">
+        <main-nav :indexMenu="'/software'"></main-nav>
+         <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                     <search-date :isShowDate="false" :tit="'监控'" :isShowId="true"  @seachtrigger="seachtrigger">
+                         <div slot="softWare" class="softWareBox">
+                                  <el-dropdown 
+                                  style="line-height:1px;vertical-align: middle;" 
+                                  @visible-change="changeDrop"
+                                  placement="top"
+                                  >
+                                    <span class="el-dropdown-link">
+                                        <img v-if="isDrop" src="../assets/img/software/default/iphone.png" alt="">
+                                        <img v-else src="../assets/img/software/glide/iphone.png" alt="">
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>联系人：韩梅梅</el-dropdown-item>
+                                        <el-dropdown-item>电话：0592-909090</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><el-dropdown 
+                                style="line-height:1px"
+                                placement="top"
+                                >
+                                    <span class="el-dropdown-link">
+                                        高清
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>流畅</el-dropdown-item>
+                                        <el-dropdown-item>高清</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><img class="img_mid" src="../assets/img/software/default/one.png" alt=""><img class="img_mid" src="../assets/img/software/default/four.png" alt=""><img class="img_mid" src="../assets/img/software/default/four.png" alt=""><img class="img_mid" src="../assets/img/software/default/fullScreen.png" alt="">
+                         </div>
+                     </search-date>
+                     <div class="realTimeBox">
+                         <el-row>
+                             <el-col :span="12">
+                                 <div class="playerBox">
+                                     <div class="player_list">
+                                        <real-player></real-player>
+                                        <!-- <time-bar @sendTime="restTime"></time-bar> -->
+                                     </div>
+                                 </div>
+                             </el-col>
+                             <el-col :span="12">
+                                 <div class="playerBox">
+                                     <div class="player_list">
+                                         23343
+                                     </div>
+                                 </div>
+                             </el-col>
+                         </el-row>
+                     </div>
+                </div>
+                <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import MainNav from '../components/MainNav';
+import TimeBar from '../components/common/timeBar';
+import searchDate from '../components/common/searchDate';
+import realPlayer from '../components/realTimePlayer/realPalyer';
+import {getRealTimePlayer} from '../api/global';
+import {mapGetters} from 'vuex';
+export default {
+        name:"software", //安防模块
+        components:{MainNav,searchDate,realPlayer,TimeBar},
+        data (){
+            return {
+                isDrop:true
+            }
+        },
+     computed:{
+           ...mapGetters([
+               'userInfo',
+               'shop_list_current'
+           ]),
+
+     },
+    methods:{
+        seachtrigger(){
+
+        },
+        realTimePlayer(){
+            getRealTimePlayer({
+                shop_id:this.shop_list_current
+            })
+            .then(res=>{
+                console.log(res)
+            })
+        },
+        changeDrop(isDrop){
+            this.isDrop = !isDrop
+        },
+        restTime(hour,min,second){
+            console.log(1111,hour,min,second)
+        }
+    },
+    created(){
+        this.realTimePlayer() 
+    },
+}
+</script>
+
+<style scoped lang="scss">
+    .softWareBox{
+        text-align: right;
+        padding-right:21px;
+        & .el-dropdown{
+            padding:0 10px;
+        }
+        & .img_mid{
+
+            vertical-align: middle;
+            padding: 0 10px;
+        }
+    }
+    .realTimeBox{
+        width: 1024px;
+        min-height: 820px;
+        margin-top:6px;
+        background-color: #ffffff;
+        padding: 25px;
+        box-sizing:border-box;
+        .playerBox{
+            height: 285px;
+            padding: 5px;
+            .player_list{
+                height: 100%;
+            }
+        }
+    }
+</style>

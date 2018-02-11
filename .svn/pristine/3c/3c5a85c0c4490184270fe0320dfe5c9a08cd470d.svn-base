@@ -1,0 +1,367 @@
+<template>
+    <!-- 页面头部导航 -->
+    <div class="app">
+        <main-nav :indexMenu="'/statistics/passengerFlow'"></main-nav>
+        <div class="contentBox" v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                    <div class="dateShowBox">
+                          <search-date ref="currentData" @seachtrigger="seachtrigger" :tit="'客流'" :isShowDate="true" :isShowId="false"></search-date>
+                          <!-- <chart-list :chart="chart"></chart-list> -->
+                          <card-rectangle :chart="chart" :colorChange="colorChange" @penetrate="penetrate"></card-rectangle>
+                    </div>
+                    <div class="trendChartBox">
+                           <div>{{current_trend.name}}趋势图</div>
+                           <div id="turnoverCut">
+                                <el-radio-group v-model="cut_trend_chart" @change="cutChange">
+                                    <!-- <el-radio-button label="total_people">总人流</el-radio-button> -->
+                                    <el-radio-button label="passenger">客流量</el-radio-button>
+                                    <!-- <el-radio-button label="into_shop_rate">进店率</el-radio-button> -->
+                                    <el-radio-button label="new_guest">新客</el-radio-button>
+                                    <el-radio-button label="old_guest">老客</el-radio-button>
+                                    <el-radio-button label="return_rate">回头率</el-radio-button>
+                                </el-radio-group>
+                            </div>
+                            <div class="cut_trend_chart">
+                                <div id="contain1" style="height:430px"></div>
+                            </div>
+                    </div>
+                    <div class="userChartBox">
+                        <el-row class="userChart">
+                            <!-- 漏斗图 -->
+                            <!-- <el-col :span="12">
+                                <div class="grid-content">
+                                     <div class="funnlBox">
+                                          <div>
+                                              人流漏斗  
+                                          </div>
+                                          <el-row>
+                                              <el-col :span="14">
+                                                  <div class="funnlLeft">
+                                                      <img src="../../assets/img/funnl.png" alt="漏斗图">
+                                                  </div>
+                                              </el-col>
+                                              <el-col :span="10">
+                                                  <div class="funnlRight">
+                                                      <div v-if="funnel">
+                                                           <div>{{funnel.passenger.name}}：<span class="num">{{funnel.passenger.value}}</span>人</div>
+                                                           <div>{{funnel.total_people.name}}：<span class="num">{{funnel.total_people.value}}</span>人</div>
+                                                           <div>{{funnel.turnover_count.name}}：<span class="num">{{funnel.turnover_count.value}}</span>笔</div>
+                                                      </div>
+                                                  </div>
+                                              </el-col>
+                                          </el-row>
+                                     </div>
+                                </div>
+                            </el-col> -->
+                            <el-col :span="12">
+                                <div class="grid-content">
+                                 <div class="chart" id="contain2" style="height:100%"></div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content">
+                                    <div class="dataDisplay" v-if="graphic2">
+                                          <el-row class="showLine">
+                                              <el-col :span="6" class="left">{{graphic2.guest_rate.format[0].name}}：</el-col>  
+                                              <el-col :span="18" class="right">
+                                                  <span :class="[graphic2.guest_rate.format[0].y.length>5?'changeFont':'']">{{graphic2.guest_rate.format[0].y}}</span>
+                                                  人
+                                                </el-col>
+                                          </el-row>
+                                          <el-row class="showLine">
+                                              <el-col :span="6" class="left">{{graphic2.guest_rate.format[1].name}}：</el-col>  
+                                              <el-col :span="18" class="right">
+                                                  <span :class="[graphic2.guest_rate.format[1].y.length>5?'changeFont':'']">{{graphic2.guest_rate.format[0].y}}</span>
+                                                  人
+                                                </el-col>
+                                          </el-row>
+                                    </div>
+                                    <div class="chart" id="contain3" style="height:100%"></div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content">
+                                    <div class="dataDisplay" v-if="graphic2">
+                                          <el-row class="showLine">
+                                              <el-col :span="6" class="left">{{graphic2.gender_rate.format[0].name}}：</el-col>  
+                                              <el-col :span="18" class="right">
+                                                  <span :class="[graphic2.gender_rate.format[0].y.length>5?'changeFont':'']">{{graphic2.gender_rate.format[0].y}}</span>
+                                                  人
+                                                </el-col>
+                                          </el-row>
+                                          <el-row class="showLine">
+                                              <el-col :span="6" class="left">{{graphic2.gender_rate.format[1].name}}：</el-col>  
+                                              <el-col :span="18" class="right">
+                                                  <span :class="[graphic2.gender_rate.format[1].y.length>5?'changeFont':'']">{{graphic2.gender_rate.format[1].y}}</span>
+                                                  人
+                                                </el-col>
+                                          </el-row>
+                                    </div>
+                                    <div class="chart" id="contain4" style="height:100%"></div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </div>
+                <div class="contentFooter"></div>
+            </div>
+        </div>
+    </div>  
+</template>
+<script>
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/statistic/searchDate';
+import Highcharts from 'highcharts';
+import {mapGetters} from 'vuex';
+import {statisticsPassenger} from '../../api/global';
+import {statisticsSpline,userOptionColumn,userOptionPie}  from '../../assets/js/chart-options';
+import format from '../../assets/js/formatterbg';
+import cardRectangle from '../../components/common/cardRectangle';
+export default {
+        name:"passengerFlow",
+        components:{MainNav,searchDate,cardRectangle},
+        data (){
+            return {
+                chart:"",
+                cut_trend_chart:"passenger",
+                graphic:"",
+                graphic2:"",
+                current_trend:"",//切换走势图时当前走势图的数据
+                funnel:"",
+                colorChange:['总人流','客流量'],
+                date:""
+                }
+        },
+        computed:{
+            ...mapGetters([
+                    'shop_list_current', //当前店铺
+            ])
+        },
+        methods:{
+           seachtrigger(val){
+              let rootDate =this.$route.params;
+                if(rootDate.type){
+                    this.date = rootDate.date;
+                    this.type = rootDate.type;
+                    this.changeCardAcross(this.type);
+                    this.$refs.currentData.last_visit = this.date;
+                }else{
+                 this.date = val
+                }
+               this.passengerFlowInit();
+            },
+            passengerFlowInit(){
+                //默认为今天
+                statisticsPassenger({
+                    shop_id:this.shop_list_current,
+                    start_date:this.date[0],
+                    end_date:this.date[1]
+                })
+                .then(res=>{
+                        var data =res.data.data
+                        //删除PC端不需要字段
+                        delete data.chart.return_guest;
+                        //this.chart = data.chart;
+                        //排序
+                        this.chart = [];
+                        this.chart.push(data.chart.passenger)
+                        this.chart.push(data.chart.new_guest)
+                        this.chart.push(data.chart.old_guest)
+                        this.chart.push(data.chart.into_shop_rate)
+                        this.chart.push(data.chart.visit_guest)
+
+                        this.funnel = data.s_chart;
+                        this.graphic = this.formatGraphic(data.graphic);
+                        this.current_trend = this.graphic[this.cut_trend_chart];
+                        this.renderChart(this.current_trend);
+                        // 格式化饼图 柱形 数据
+                        this.graphic2=this.formatGraphic2(data.graphic2);
+                        this.renderPieElse(this.graphic2);
+                })
+            },
+            cutChange(val){
+                  this.current_trend = this.graphic[val];
+                  this.renderChart(this.current_trend);
+            },
+           formatGraphic(data){ //格式化数据趋势图数据
+                var obj = {}
+                for(var i in data){
+                    var dataInside = data[i].data
+                    data[i].x = [];
+                    data[i].y1=[];
+                    data[i].y2=[];
+                    for(var j in dataInside){
+                          data[i].x.push(dataInside[j].name)
+                          data[i].y1.push(dataInside[j].data[0] * 1);
+                          data[i].y2.push(dataInside[j].data[1] * 1);
+                    }
+                }
+              return data
+            }, //渲染线图
+            formatGraphic2(data){ 
+                    data.age_rate =  format.formatSpline(data.age_rate,'岁');
+                    data.gender_rate = format.formatPie(data.gender_rate);
+                    data.guest_rate  = format.formatPie(data.guest_rate);
+                return data
+            },
+            renderChart(currentData){
+                     Highcharts.chart('contain1',statisticsSpline(currentData.line,currentData.x,currentData.y1,currentData.y2))
+            },  //渲染 新老客户 漏斗 年龄占比
+            renderPieElse(data){
+                    Highcharts.chart('contain2',userOptionColumn(data.age_rate.name,data.age_rate.dateX,data.age_rate.y))
+                     Highcharts.chart('contain3',userOptionPie(data.guest_rate.name,data.guest_rate.format))
+                      Highcharts.chart('contain4',userOptionPie(data.gender_rate.name,data.gender_rate.format))
+            },
+            penetrate(item){
+                if(item.name=="进店率"||item.name=="访客"){
+                    return
+                }
+                this.$router.push({name:'userManage',params:{type:item.name,date:this.date}})
+            },
+            changeCardAcross(type){
+                switch(type){
+                    case '总人流':
+                     this.cut_trend_chart = "current_trend";
+                    break;
+                    case '客流量':
+                     this.cut_trend_chart = "passenger";
+                    break;
+                    case '进店率':
+                     this.cut_trend_chart = "into_shop_rate";
+                    break;
+                    case '新客':
+                     this.cut_trend_chart = "new_guest";
+                    break;
+                    case '老客':
+                     this.cut_trend_chart = "old_guest";
+                    break;
+                    case '回头率':
+                     this.cut_trend_chart = "return_rate";
+                    break;
+                }
+            }
+        },
+        created(){
+        }
+   }
+</script>
+
+<style scoped lang="scss">
+    .dateShowBox{
+      width: 1024px;
+      height: 389px;
+      background-color: rgba(255, 255, 255, 1);
+      -webkit-box-shadow: 0 0 1px #ccc;
+      -moz-box-shadow: 0 0 1px #ccc;
+      box-shadow: 0 0 1px #ccc;
+    }
+     .trendChartBox{
+        width: 100%;
+        height: 545px;
+        background-color: rgba(255, 255, 255, 1);
+         margin-top: 6px;
+         & > div:nth-child(1){
+            line-height: 77px;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #4d4d4d;
+            padding-left: 27px;
+         }
+         & > div:nth-child(2){
+             text-align: center;
+         }
+    }
+    .userChartBox{
+        width: 100%;
+        margin-top: 6px;
+    }
+    .userChart .el-col.el-col-12{
+        height: 377px;
+        &:nth-child(2n-1){
+            padding-right: 3px;
+            padding-bottom: 6px;
+        }
+        &:nth-child(2n){
+            padding-left: 3px;
+            padding-bottom: 6px;
+        }
+        & .grid-content{
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            position: relative;
+        }
+    }
+    .funnlBox{
+        height: 100%;
+        width: 100%;
+        & > div:nth-child(1){
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #4d4d4d;
+            padding: 34px 0 26px 30px;
+        }
+       & .funnlRight{
+           width: 100%;
+           height: 100%;
+           & > div:nth-child(1){
+               margin-top:45px;
+               margin-left: 10px;
+               &  div{
+                    font-size: 14px;
+                    letter-spacing: 0px;
+                    color: #4c4c4c;
+                    line-height: 50px;
+                    & .num{
+                        font-size: 20px;
+                        display: inline-block;
+                        width: 90px;
+                        text-align: center;
+                    }
+               }
+           }
+       }
+       & .funnlLeft{
+           width: 100%;
+           height: 100%;
+           & > img{
+               margin:29px 0 0 32px;
+           }
+       }
+    }
+    .dataDisplay{
+        position: absolute;
+        top:50%;
+        right:0;
+        transform: translate(0,-40%);
+        z-index: 10;
+        & > .showLine{
+            width: 220px;
+            font-size: 14px;
+            letter-spacing: 0px;
+            color: #4c4c4c;
+            line-height: 50px;
+            & .left{
+                user-select: none;
+                text-align:right;
+            }
+            & .right{
+                & > span{
+                    display:inline-block;
+                    width: 128px;
+                    font-size: 40px;
+                    text-align: center;
+                }
+                & .changeFont{
+                    font-size: 22px;
+                }
+            }
+    }
+ }
+ .dataListBox /deep/ .dataList{
+         & >div:nth-child(1),& >div:nth-child(2),& >div:nth-child(3),& >div:nth-child(5),& >div:nth-child(6){
+             cursor: pointer;
+         }
+    }
+</style>

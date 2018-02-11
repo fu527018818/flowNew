@@ -1,0 +1,76 @@
+<template>
+        <div class="shortCutBox">
+            <div class="calendarBtn">
+                <i class="iconfont icon-calendar" @click="CalendarBtn"></i>
+                <div class="selectDate">
+                    <el-date-picker
+                        ref="selectdDate"
+                        v-model="clearDate"
+                        type="date"
+                        @change="getChangeDate"
+                        value-format="yyyy-MM-dd"
+                        placeholder="选择日期">
+                    </el-date-picker> 
+                </div>
+                
+            </div>
+            
+        </div>
+</template>
+
+<script>
+    export default {
+        name:"recordShortcut",
+        data(){
+            return{
+                clearDate:"",
+                currentDate:""
+            }
+        },
+        methods:{
+            CalendarBtn(){
+                this.date = "";
+                this.$refs.selectdDate.focus();
+            },
+            getChangeDate(val){
+               if(val){
+                    this.currentDate = val;
+                    this.clearDate = "";
+               }else{
+                   return;
+               }
+           
+            }
+        }
+    }
+</script>
+
+<style scoped lang="scss">
+    .shortCutBox{
+        height: 70px;
+        line-height:70px;
+    }
+    .calendarBtn{
+        width: 41px;
+        display: inline-block;
+        position: relative;
+        overflow: hidden;
+        z-index: 1000;
+        & .iconfont.icon-calendar{
+            font-size: 20px;
+            position: relative;
+            z-index: 1000;
+            cursor: pointer;
+            padding:21px 21px 21px 0;
+        }
+    }
+    .selectDate{
+        position: absolute;
+        top:0;
+        left:0;
+        z-index:0;
+        opacity: 0;
+        // visibility: hidden;
+        cursor: pointer;
+    }
+</style>

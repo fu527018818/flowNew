@@ -1,0 +1,184 @@
+<template>
+    <!-- 页面头部导航 -->
+    <div class="app">
+        <main-nav :indexMenu="'/software'"></main-nav>
+         <div class="contentBox"  v-slim-scroll>
+            <div class="contentBox_child">
+                <div class="content">
+                     <search-date :isShowDate="false" :tit="'监控'" :isShowId="true"  @seachtrigger="seachtrigger">
+                         <div slot="softWare" class="softWareBox">
+                                  <el-dropdown 
+                                  style="line-height:1px;vertical-align: middle;" 
+                                  @visible-change="changeDrop"
+                                  placement="top"
+                                  >
+                                    <span class="el-dropdown-link">
+                                        <img v-if="isDrop" src="../../assets/img/software/default/iphone.png" alt="">
+                                        <img v-else src="../../assets/img/software/glide/iphone.png" alt="">
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>联系人：韩梅梅</el-dropdown-item>
+                                        <el-dropdown-item>电话：0592-909090</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><el-dropdown 
+                                style="line-height:1px"
+                                placement="top"
+                                >
+                                    <span class="el-dropdown-link">
+                                        高清
+                                    </span>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item>流畅</el-dropdown-item>
+                                        <el-dropdown-item>高清</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown><img class="img_mid" src="../../assets/img/software/default/one.png" alt=""><img class="img_mid" src="../../assets/img/software/default/four.png" alt=""><img class="img_mid" src="../../assets/img/software/default/four.png" alt=""><img class="img_mid" src="../../assets/img/software/default/fullScreen.png" alt="">
+                         </div>
+                     </search-date>
+                     <div class="realTimeBox">
+                         <el-row v-if="videoList">
+                             <el-col :span="12" v-for="item in videoList" :key="item.id">
+                                 <div class="playerBox">
+                                     <div class="player_list">
+                                        <real-player :lists="item"  @uploadImg="uploadImg"></real-player>
+                                     </div>
+                                 </div>
+                             </el-col>
+                         </el-row>
+                     </div>
+                </div>
+                <div class="contentFooter isMd6"></div>
+            </div>
+        </div>
+         <el-dialog
+            title="截图预览"
+            :visible.sync="showBigHeader"
+            width="40%"
+            :before-close="handleClose"
+            center>
+            <img class="bigHeader" :src="screenshotUrl" alt="">
+             <div slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="dialogFormVisible">上传到相册</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import MainNav from '../../components/MainNav';
+import searchDate from '../../components/common/searchDate';
+import realPlayer from '../../components/realTimePlayer/realPalyer';
+import {getRealTimePlayer} from '../../api/global';
+import {mapGetters} from 'vuex';
+import {dataURLtoBlob,upload} from '../../assets/js/uploadImg';
+export default {
+        name:"software", //安防模块
+        components:{MainNav,searchDate,realPlayer},
+        data (){
+            return {
+                isDrop:true,
+                showBigHeader:false,
+                screenshotUrl:"",
+                videoList:"",
+            }
+        },
+     computed:{
+           ...mapGetters([
+               'userInfo',
+               'shop_list_current',
+               'secret',
+               'token'
+           ]),
+
+     },
+     methods:{
+          seachtrigger(){
+              this.realTimePlayer();
+          },
+        realTimePlayer(){
+            getRealTimePlayer({
+                shop_id:this.shop_list_current
+            })
+            .then(res=>{
+                if(res.data.status=="200"){
+                    this.videoList = res.data.data.lists;
+                }else{
+                    console.log(res.data.message);
+                }
+            })
+        },
+        changeDrop(isDrop){
+            this.isDrop = !isDrop
+        },
+        uploadImg(imgUrl){
+               this.screenshotUrl = imgUrl;
+               this.showBigHeader = true;
+        },
+        handleClose(done){
+            done();
+            this.screenshotUrl = "";
+            
+        }, //上传图片
+        dialogFormVisible(){
+               var file = dataURLtoBlob(this.screenshotUrl);
+               upload(
+                   '/utils/upload',
+                    file,
+                    this.token,
+                    this.userInfo.id,
+                    this.secret,
+                    'images'
+               ).then(res=>{
+                    this.showBigHeader = false;
+                      this.$message({
+                        message:'图片已上传到相册',
+                        type: 'success'
+                        });
+                    this.screenshotUrl = "";
+               })
+               .catch(err=>{
+                   this.$message.error(err);
+               })
+        }
+        },
+        created(){
+           this.realTimePlayer();
+          var time2 = new Date().Format("yyyy-MM-dd hh:mm:ss"); 
+          console.log(time2)
+        }
+
+    }
+</script>
+
+<style scoped lang="scss">
+    .softWareBox{
+        text-align: right;
+        padding-right:21px;
+        & .el-dropdown{
+            padding:0 10px;
+        }
+        & .img_mid{
+
+            vertical-align: middle;
+            padding: 0 10px;
+        }
+    }
+    .realTimeBox{
+        width: 1024px;
+        min-height: 820px;
+        margin-top:6px;
+        background-color: #ffffff;
+        padding: 25px;
+        box-sizing:border-box;
+        .playerBox{
+            height: 285px;
+            padding: 5px;
+            .player_list{
+                height: 100%;
+            }
+        }
+    }
+.bigHeader{
+    display:inline-block;
+    width:100%;
+}
+</style>
